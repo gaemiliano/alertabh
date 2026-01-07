@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { MapPin, Camera, Bell, Users, Menu, Plus, Clock, AlertCircle, Navigation, Send, X, Check, User, Settings, Trophy, Star, Lock, LogOut, Award, CheckCircle, Crown, Palette, Fuel, Bike, Trash2, Cloud, Download, Upload, Shield, DollarSign } from 'lucide-react';
+import { MapPin, Camera, Bell, Users, Menu, Plus, Clock, AlertCircle, Navigation, Send, X, Check, User, Settings, Trophy, Star, Lock, LogOut, Award, CheckCircle, Crown, Palette, Fuel, Bike, Trash2, Cloud, Download, Upload, Shield, DollarSign, Search, Map as MapIcon, Layers, History, CheckSquare, TrendingUp, Zap } from 'lucide-react';
 
 // ============================================
 // CORREÇÃO DE ÍCONES DO LEAFLET
@@ -18,7 +18,6 @@ L.Icon.Default.mergeOptions({
 // ÍCONES PERSONALIZADOS DO MAPA
 // ============================================
 
-// Ícone do Usuário (Bolinha Azul Pulsante)
 const userPulseIcon = new L.DivIcon({
   className: 'user-pulse-icon',
   html: `<div style="background-color: #3b82f6; width: 16px; height: 16px; border-radius: 50%; border: 2px solid white; position: relative; box-shadow: 0 0 10px rgba(0,0,0,0.3);">
@@ -29,7 +28,6 @@ const userPulseIcon = new L.DivIcon({
   popupAnchor: [0, -10]
 });
 
-// Ícone de Alerta/Blitz (Radar Vermelho Pulsante)
 const alertPulseIcon = new L.DivIcon({
   className: 'alert-pulse-icon',
   html: `<div style="background-color: #ef4444; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; position: relative; box-shadow: 0 0 10px rgba(0,0,0,0.5);">
@@ -61,6 +59,64 @@ function LocationMarker({ position }) {
 }
 
 // ============================================
+// COMPONENTE: BUSCA DE ENDEREÇO
+// ============================================
+function MapSearch({ onLocationFound }) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    
+    setIsSearching(true);
+    try {
+      // Usando Nominatim (OpenStreetMap) para geocoding
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery + ', Belo Horizonte, Brasil')}&limit=1`
+      );
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        const { lat, lon, display_name } = data[0];
+        onLocationFound([parseFloat(lat), parseFloat(lon)], display_name);
+        setSearchQuery('');
+      } else {
+        alert('❌ Endereço não encontrado. Tente outro termo.');
+      }
+    } catch (error) {
+      console.error('Erro na busca:', error);
+      alert('❌ Erro ao buscar endereço.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  return (
+    <div className="absolute top-20 left-4 right-4 z-[999] flex gap-2">
+      <input
+        type="text"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+        placeholder="Buscar endereço em BH..."
+        className="flex-1 bg-white rounded-lg shadow-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+      <button
+        onClick={handleSearch}
+        disabled={isSearching}
+        className="bg-blue-600 text-white p-3 rounded-lg shadow-lg hover:bg-blue-500 disabled:opacity-50 transition-all"
+      >
+        {isSearching ? (
+          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+        ) : (
+          <Search className="w-5 h-5" />
+        )}
+      </button>
+    </div>
+  );
+}
+
+// ============================================
 // TELA DE LOGIN
 // ============================================
 function LoginScreen({ onLogin }) {
@@ -75,53 +131,53 @@ function LoginScreen({ onLogin }) {
     if (email === 'admin' && password === 'admin') {
       onLogin({ name: 'Administrador', type: 'admin', level: 99 });
     } else if (email === 'user' && password === 'user') {
-      onLogin({ name: 'João Silva', type: 'user', level: 12 });
+      onLogin({ name: 'João Silva', type: 'user', level: 1 });
     } else {
       setError('Credenciais inválidas. Tente: admin/admin ou user/user');
     }
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-900 items-center justify-center p-6 text-white">
-      <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-blue-500/50">
+    <div className="flex flex-col h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 items-center justify-center p-6 text-white">
+      <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-blue-500/50 animate-pulse">
         <Shield className="w-12 h-12 text-white" />
       </div>
-      <h1 className="text-3xl font-bold mb-2">AlertaBH 5.0</h1>
-      <p className="text-gray-400 mb-8 text-center">Monitoramento e Segurança</p>
+      <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">AlertaBH 5.0</h1>
+      <p className="text-gray-300 mb-8 text-center">Monitoramento Inteligente em Tempo Real</p>
 
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
         <div>
-          <label className="text-sm text-gray-400 pl-1">Usuário</label>
+          <label className="text-sm text-gray-300 pl-1 font-semibold">Usuário</label>
           <input 
             type="text" 
             placeholder="Ex: user ou admin" 
             value={email} 
             onChange={e => setEmail(e.target.value)}
-            className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-white focus:border-blue-500 outline-none transition-all"
+            className="w-full bg-gray-800/50 backdrop-blur border border-gray-600 rounded-xl p-4 text-white placeholder-gray-400 focus:border-blue-500 outline-none transition-all"
             required
           />
         </div>
         <div>
-          <label className="text-sm text-gray-400 pl-1">Senha</label>
+          <label className="text-sm text-gray-300 pl-1 font-semibold">Senha</label>
           <input 
             type="password" 
             placeholder="Senha" 
             value={password} 
             onChange={e => setPassword(e.target.value)}
-            className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-white focus:border-blue-500 outline-none transition-all"
+            className="w-full bg-gray-800/50 backdrop-blur border border-gray-600 rounded-xl p-4 text-white placeholder-gray-400 focus:border-blue-500 outline-none transition-all"
             required
           />
         </div>
         {error && (
-          <div className="bg-red-500 bg-opacity-20 border border-red-500 rounded-lg p-3">
-            <p className="text-red-500 text-sm text-center">{error}</p>
+          <div className="bg-red-500/20 backdrop-blur border border-red-500 rounded-lg p-3">
+            <p className="text-red-400 text-sm text-center">{error}</p>
           </div>
         )}
         <button 
           type="submit" 
-          className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-95"
+          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-95"
         >
-          Entrar
+          Entrar no Sistema
         </button>
       </form>
     </div>
@@ -132,9 +188,7 @@ function LoginScreen({ onLogin }) {
 // APP PRINCIPAL
 // ============================================
 export default function AlertaBHApp() {
-  // ============================================
-  // ESTADOS GLOBAIS
-  // ============================================
+  // Estados Globais
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userData, setUserData] = useState(null);
   const [currentView, setCurrentView] = useState('map'); 
@@ -145,49 +199,233 @@ export default function AlertaBHApp() {
   const [userPosition, setUserPosition] = useState(null);
   const [alerts, setAlerts] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [mapType, setMapType] = useState('tactical'); // 'tactical' ou 'cartographic'
+  const [searchedLocation, setSearchedLocation] = useState(null);
 
   // Report Flow
   const [hasPhoto, setHasPhoto] = useState(false);
+  const [photoData, setPhotoData] = useState(null);
   const [gpsLocked, setGpsLocked] = useState(false);
   const [alertType, setAlertType] = useState('');
   const [expirationTime, setExpirationTime] = useState('30');
 
   // Configurações
-  const [notificationRadius, setNotificationRadius] = useState('5');
   const [selectedTheme, setSelectedTheme] = useState('dark');
 
   // Combustível
   const [fuelType, setFuelType] = useState('');
   const [fuelQuantity, setFuelQuantity] = useState('5');
 
+  // Conquistas
+  const [unlockedAchievements, setUnlockedAchievements] = useState([]);
+
   // ============================================
-  // DADOS E CONFIGURAÇÕES
+  // CONFIGURAÇÕES DE TEMAS (4 TEMAS COMPLETOS)
   // ============================================
-  
-  // Calcula estatísticas REAIS baseadas nos alertas
-  const userStats = {
-    name: userData?.name || 'Usuário',
-    level: userData?.level || 1,
-    points: alerts.length * 50, // 50 pontos por alerta
-    ranking: Math.max(1, 100 - alerts.length * 3), // Ranking melhora com alertas
-    totalAlerts: alerts.length,
-    verified: alerts.filter(a => a.createdBy === userData?.name).length,
-    badges: Math.min(8, Math.floor(alerts.length / 3)) // 1 badge a cada 3 alertas
+  const themes = {
+    dark: {
+      id: 'dark',
+      name: 'Noturno Tático',
+      colors: {
+        bg: 'bg-gray-900',
+        header: 'bg-blue-600',
+        card: 'bg-gray-800',
+        text: 'text-white',
+        textSecondary: 'text-gray-400',
+        border: 'border-gray-700',
+        button: 'bg-blue-600 hover:bg-blue-500',
+        accent: 'text-blue-400'
+      },
+      premium: false
+    },
+    ocean: {
+      id: 'ocean',
+      name: 'Oceano Profundo',
+      colors: {
+        bg: 'bg-gradient-to-br from-blue-900 via-cyan-900 to-teal-900',
+        header: 'bg-gradient-to-r from-cyan-600 to-blue-600',
+        card: 'bg-cyan-900/80 backdrop-blur',
+        text: 'text-cyan-50',
+        textSecondary: 'text-cyan-300',
+        border: 'border-cyan-700',
+        button: 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500',
+        accent: 'text-cyan-400'
+      },
+      premium: false
+    },
+    neon: {
+      id: 'neon',
+      name: 'Neon Cyberpunk',
+      colors: {
+        bg: 'bg-gradient-to-br from-purple-900 via-pink-900 to-indigo-900',
+        header: 'bg-gradient-to-r from-purple-600 to-pink-600',
+        card: 'bg-purple-900/80 backdrop-blur border-2 border-pink-500/50',
+        text: 'text-pink-50',
+        textSecondary: 'text-purple-300',
+        border: 'border-pink-500',
+        button: 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500',
+        accent: 'text-pink-400'
+      },
+      premium: true
+    },
+    sunset: {
+      id: 'sunset',
+      name: 'Pôr do Sol',
+      colors: {
+        bg: 'bg-gradient-to-br from-orange-900 via-red-900 to-yellow-900',
+        header: 'bg-gradient-to-r from-orange-600 to-red-600',
+        card: 'bg-orange-900/80 backdrop-blur',
+        text: 'text-orange-50',
+        textSecondary: 'text-orange-300',
+        border: 'border-orange-700',
+        button: 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500',
+        accent: 'text-orange-400'
+      },
+      premium: true
+    }
   };
 
+  const currentTheme = themes[selectedTheme];
+
+  // ============================================
+  // TIPOS DE MAPAS
+  // ============================================
+  const mapTiles = {
+    tactical: {
+      name: 'Tático Escuro',
+      url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+      attribution: '&copy; CARTO'
+    },
+    cartographic: {
+      name: 'Cartográfico',
+      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      attribution: '&copy; OpenStreetMap'
+    }
+  };
+
+  // ============================================
+  // TIPOS DE ALERTAS (10 TIPOS)
+  // ============================================
   const alertTypes = [
     { id: 'blitz', label: 'Blitz Policial', icon: '🚔', color: 'red' },
     { id: 'acidente', label: 'Acidente', icon: '🚗', color: 'orange' },
     { id: 'congestionamento', label: 'Trânsito Lento', icon: '🚦', color: 'yellow' },
-    { id: 'obra', label: 'Obra na Via', icon: '🚧', color: 'amber' }
+    { id: 'obra', label: 'Obra na Via', icon: '🚧', color: 'amber' },
+    { id: 'buraco', label: 'Buraco na Pista', icon: '🕳️', color: 'brown' },
+    { id: 'alagamento', label: 'Alagamento', icon: '🌊', color: 'blue' },
+    { id: 'manifestacao', label: 'Manifestação', icon: '📢', color: 'purple' },
+    { id: 'veiculo-parado', label: 'Veículo Parado', icon: '🛑', color: 'gray' },
+    { id: 'animal', label: 'Animal na Pista', icon: '🐕', color: 'green' },
+    { id: 'perigo', label: 'Perigo Geral', icon: '⚠️', color: 'red' }
   ];
 
-  const themes = [
-    { id: 'dark', name: 'Escuro Clássico', preview: 'bg-gray-900', free: true },
-    { id: 'blue', name: 'Azul Oceano', preview: 'bg-blue-900', free: true },
-    { id: 'neon', name: 'Neon Cyberpunk', preview: 'bg-purple-900', premium: true },
-    { id: 'sunset', name: 'Pôr do Sol', preview: 'bg-gradient-to-br from-orange-500 to-pink-600', premium: true }
+  // ============================================
+  // SISTEMA DE CONQUISTAS (REAL)
+  // ============================================
+  const achievements = [
+    { 
+      id: 'first_alert', 
+      name: 'Primeiro Passo', 
+      icon: '🌱', 
+      description: 'Crie seu primeiro alerta',
+      condition: () => alerts.length >= 1,
+      points: 50
+    },
+    { 
+      id: 'vigilant', 
+      name: 'Vigilante', 
+      icon: '👁️', 
+      description: 'Crie 5 alertas',
+      condition: () => alerts.length >= 5,
+      points: 100
+    },
+    { 
+      id: 'protector', 
+      name: 'Protetor', 
+      icon: '🛡️', 
+      description: 'Crie 10 alertas',
+      condition: () => alerts.length >= 10,
+      points: 200
+    },
+    { 
+      id: 'hero', 
+      name: 'Herói da Cidade', 
+      icon: '🦸', 
+      description: 'Crie 20 alertas',
+      condition: () => alerts.length >= 20,
+      points: 500
+    },
+    { 
+      id: 'photographer', 
+      name: 'Fotógrafo', 
+      icon: '📸', 
+      description: 'Adicione foto a um alerta',
+      condition: () => alerts.some(a => a.hasPhoto),
+      points: 75
+    },
+    { 
+      id: 'explorer', 
+      name: 'Explorador', 
+      icon: '🗺️', 
+      description: 'Use busca de endereço',
+      condition: () => searchedLocation !== null,
+      points: 50
+    },
+    { 
+      id: 'diverse', 
+      name: 'Versátil', 
+      icon: '🎯', 
+      description: 'Crie 3 tipos diferentes de alertas',
+      condition: () => {
+        const types = new Set(alerts.map(a => a.type));
+        return types.size >= 3;
+      },
+      points: 150
+    },
+    { 
+      id: 'premium', 
+      name: 'VIP', 
+      icon: '👑', 
+      description: 'Torne-se Premium',
+      condition: () => isPremium,
+      points: 100
+    }
   ];
+
+  // Verificar e desbloquear conquistas
+  useEffect(() => {
+    achievements.forEach(achievement => {
+      if (achievement.condition() && !unlockedAchievements.includes(achievement.id)) {
+        setUnlockedAchievements(prev => [...prev, achievement.id]);
+        
+        // Adicionar notificação
+        const newNotif = {
+          id: Date.now(),
+          type: 'achievement',
+          title: '🏆 Nova Conquista!',
+          desc: `${achievement.icon} ${achievement.name} - +${achievement.points} pts`,
+          time: 'Agora',
+          read: false,
+          achievementId: achievement.id
+        };
+        setNotifications(prev => [newNotif, ...prev]);
+      }
+    });
+  }, [alerts, isPremium, searchedLocation]);
+
+  // Calcular estatísticas REAIS
+  const userStats = {
+    name: userData?.name || 'Usuário',
+    level: Math.floor(alerts.length / 3) + 1,
+    points: alerts.length * 50 + unlockedAchievements.reduce((sum, id) => {
+      const achievement = achievements.find(a => a.id === id);
+      return sum + (achievement?.points || 0);
+    }, 0),
+    ranking: Math.max(1, 100 - alerts.length * 3),
+    totalAlerts: alerts.length,
+    verified: alerts.filter(a => a.createdBy === userData?.name).length,
+    badges: unlockedAchievements.length
+  };
 
   const fuelOptions = [
     { id: 'gasolina', name: 'Gasolina Comum', price: 5.89, icon: '⛽' },
@@ -196,15 +434,8 @@ export default function AlertaBHApp() {
     { id: 'diesel', name: 'Diesel', price: 5.59, icon: '🚛' }
   ];
 
-  const badges = [
-    { id: 1, name: 'Novato', icon: '🌱', earned: alerts.length >= 1 },
-    { id: 2, name: 'Vigilante', icon: '👁️', earned: alerts.length >= 3 },
-    { id: 3, name: 'Protetor', icon: '🛡️', earned: alerts.length >= 5 },
-    { id: 4, name: 'Herói', icon: '🦸', earned: alerts.length >= 10 }
-  ];
-
   // ============================================
-  // FUNÇÕES DE NUVEM (LOCALSTORAGE)
+  // FUNÇÕES DE NUVEM
   // ============================================
   const saveToCloud = (dataToSave) => {
     try {
@@ -223,12 +454,12 @@ export default function AlertaBHApp() {
         alerts,
         notifications,
         selectedTheme,
-        isPremium
+        isPremium,
+        unlockedAchievements
       });
-      alert("☁️ Backup salvo com sucesso na nuvem!");
+      alert("☁️ Backup salvo com sucesso!");
     } catch (e) {
-      console.error('Erro ao salvar:', e);
-      alert("❌ Erro ao salvar. Tente novamente.");
+      alert("❌ Erro ao salvar.");
     }
   };
 
@@ -241,13 +472,13 @@ export default function AlertaBHApp() {
         setNotifications(data.notifications || []);
         setSelectedTheme(data.selectedTheme || 'dark');
         setIsPremium(data.isPremium || false);
-        alert("☁️ Dados restaurados com sucesso!");
+        setUnlockedAchievements(data.unlockedAchievements || []);
+        alert("☁️ Dados restaurados!");
       } else {
-        alert("⚠️ Nenhum backup encontrado na nuvem.");
+        alert("⚠️ Nenhum backup encontrado.");
       }
     } catch (e) {
-      console.error('Erro ao carregar:', e);
-      alert("❌ Erro ao carregar dados. Tente novamente.");
+      alert("❌ Erro ao carregar.");
     }
   };
 
@@ -258,7 +489,6 @@ export default function AlertaBHApp() {
     setUserData(user);
     setIsAuthenticated(true);
     
-    // Auto-load dos dados salvos
     try {
       const saved = localStorage.getItem('alertaBH_data');
       if (saved) {
@@ -267,9 +497,10 @@ export default function AlertaBHApp() {
         setNotifications(data.notifications || []);
         setSelectedTheme(data.selectedTheme || 'dark');
         setIsPremium(data.isPremium || false);
+        setUnlockedAchievements(data.unlockedAchievements || []);
       }
     } catch (e) {
-      console.error('Erro ao carregar dados do login:', e);
+      console.error('Erro ao carregar:', e);
     }
   };
 
@@ -289,11 +520,10 @@ export default function AlertaBHApp() {
       return;
     }
     
-    if (window.confirm("🔐 Admin: Tem certeza que deseja remover este alerta?")) {
+    if (window.confirm("🔐 Admin: Remover este alerta?")) {
       const newAlerts = alerts.filter(a => a.id !== id);
       setAlerts(newAlerts);
       
-      // Adicionar notificação sobre remoção
       const removedAlert = alerts.find(a => a.id === id);
       const newNotif = {
         id: Date.now(),
@@ -309,7 +539,8 @@ export default function AlertaBHApp() {
         alerts: newAlerts,
         notifications: [newNotif, ...notifications],
         selectedTheme,
-        isPremium
+        isPremium,
+        unlockedAchievements
       });
     }
   };
@@ -321,21 +552,36 @@ export default function AlertaBHApp() {
       alerts,
       notifications: newNotifications,
       selectedTheme,
-      isPremium
+      isPremium,
+      unlockedAchievements
     });
+  };
+
+  const handleNotificationClick = (notif) => {
+    // Marcar como lida
+    const newNotifications = notifications.map(n => 
+      n.id === notif.id ? { ...n, read: true } : n
+    );
+    setNotifications(newNotifications);
+    
+    // Se for notificação de alerta, voltar ao mapa
+    if (notif.type === 'created' || notif.type === 'nearby') {
+      setCurrentView('map');
+    }
   };
 
   const resetReportFlow = () => {
     setReportStep(1);
     setAlertType('');
     setHasPhoto(false);
+    setPhotoData(null);
     setGpsLocked(false);
     setExpirationTime('30');
   };
 
   const handleGPSLock = () => {
     if (!("geolocation" in navigator)) {
-      alert("❌ GPS não suportado neste navegador.");
+      alert("❌ GPS não suportado.");
       return;
     }
     
@@ -347,16 +593,33 @@ export default function AlertaBHApp() {
         setTimeout(() => setReportStep(2), 800);
       },
       (err) => {
-        console.error('Erro GPS:', err);
-        alert("❌ Erro ao obter localização GPS. Verifique as permissões do navegador.");
+        alert("❌ Erro ao obter GPS. Verifique as permissões.");
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
 
-  const handlePhotoCapture = () => {
-    setHasPhoto(true);
-    setTimeout(() => setReportStep(3), 800);
+  // CAMERA REAL (usando input file como fallback seguro)
+  const handleCameraCapture = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment'; // Usa câmera traseira em mobile
+    
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          setPhotoData(event.target.result);
+          setHasPhoto(true);
+          setTimeout(() => setReportStep(3), 800);
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    
+    input.click();
   };
 
   const handleSubmitReport = () => {
@@ -378,33 +641,34 @@ export default function AlertaBHApp() {
         verified: 1,
         location: 'Minha Localização',
         createdBy: userData?.name,
-        createdAt: now.toISOString()
+        createdAt: now.toISOString(),
+        hasPhoto: hasPhoto,
+        photoData: photoData
       };
       
       const newAlerts = [...alerts, newAlert];
       setAlerts(newAlerts);
       
-      // Criar notificação REAL do novo alerta
       const newNotif = {
         id: Date.now(),
         type: 'created',
-        title: 'Alerta Criado!',
+        title: '✅ Alerta Criado!',
         desc: `${alertType} reportado com sucesso`,
         time: 'Agora',
-        read: false
+        read: false,
+        alertId: newAlert.id
       };
       const newNotifications = [newNotif, ...notifications];
       setNotifications(newNotifications);
       
-      // Salvar tudo
       saveToCloud({
         alerts: newAlerts,
         notifications: newNotifications,
         selectedTheme,
-        isPremium
+        isPremium,
+        unlockedAchievements
       });
       
-      // Reset COMPLETO e voltar ao mapa
       resetReportFlow();
       setCurrentView('map');
     }, 1500);
@@ -412,77 +676,100 @@ export default function AlertaBHApp() {
 
   const handleFuelOrder = () => {
     if (!fuelType) {
-      alert("⚠️ Selecione um tipo de combustível!");
+      alert("⚠️ Selecione um combustível!");
       return;
     }
     
     const selectedFuel = fuelOptions.find(f => f.id === fuelType);
     const total = (selectedFuel.price * parseInt(fuelQuantity) + 15).toFixed(2);
     
-    if (window.confirm(`🚚 Confirmar pedido?\n\n${selectedFuel.name}\nQuantidade: ${fuelQuantity}L\nTotal: R$ ${total}\n\nTempo estimado: 30 minutos`)) {
-      // Criar notificação do pedido
+    if (window.confirm(`🚚 Confirmar pedido?\n\n${selectedFuel.name}\n${fuelQuantity}L - R$ ${total}`)) {
       const newNotif = {
         id: Date.now(),
         type: 'fuel',
-        title: 'Pedido Confirmado!',
+        title: '🚚 Pedido Confirmado!',
         desc: `${fuelQuantity}L de ${selectedFuel.name} - R$ ${total}`,
         time: 'Agora',
         read: false
       };
-      const newNotifications = [newNotif, ...notifications];
-      setNotifications(newNotifications);
+      setNotifications([newNotif, ...notifications]);
       
       saveToCloud({
         alerts,
-        notifications: newNotifications,
+        notifications: [newNotif, ...notifications],
         selectedTheme,
-        isPremium
+        isPremium,
+        unlockedAchievements
       });
       
-      alert("✅ Pedido confirmado! Um motoboy está a caminho da sua localização.");
+      alert("✅ Pedido confirmado! Chegada em 30min.");
       setFuelType('');
       setFuelQuantity('5');
     }
+  };
+
+  const handleLocationFound = (position, name) => {
+    setSearchedLocation({ position, name });
+    setUserPosition(position);
+    
+    // Adicionar notificação
+    const newNotif = {
+      id: Date.now(),
+      type: 'search',
+      title: '📍 Local Encontrado',
+      desc: name,
+      time: 'Agora',
+      read: false
+    };
+    setNotifications([newNotif, ...notifications]);
   };
 
   // ============================================
   // RENDER: BOTTOM NAVIGATION
   // ============================================
   const renderBottomNav = () => (
-    <div className="bg-gray-800 border-t border-gray-700 flex justify-around p-3 z-[1001] relative">
+    <div className={`${currentTheme.colors.card} border-t ${currentTheme.colors.border} flex justify-around p-2 z-[1001] relative`}>
       <button 
         onClick={() => setCurrentView('map')} 
-        className={`flex flex-col items-center gap-1 transition-all ${currentView === 'map' ? 'text-blue-400' : 'text-gray-400'}`}
+        className={`flex flex-col items-center gap-1 transition-all ${currentView === 'map' ? currentTheme.colors.accent : currentTheme.colors.textSecondary}`}
       >
-        <MapPin className="w-6 h-6" />
-        <span className="text-[10px]">Mapa</span>
+        <MapPin className="w-5 h-5" />
+        <span className="text-[9px]">Mapa</span>
       </button>
       
       <button 
         onClick={() => setCurrentView('notifications')} 
-        className={`flex flex-col items-center gap-1 relative transition-all ${currentView === 'notifications' ? 'text-blue-400' : 'text-gray-400'}`}
+        className={`flex flex-col items-center gap-1 relative transition-all ${currentView === 'notifications' ? currentTheme.colors.accent : currentTheme.colors.textSecondary}`}
       >
-        <Bell className="w-6 h-6" />
-        <span className="text-[10px]">Alertas</span>
+        <Bell className="w-5 h-5" />
+        <span className="text-[9px]">Alertas</span>
         {notifications.filter(n => !n.read).length > 0 && (
-          <div className="absolute top-0 right-2 w-2 h-2 bg-red-500 rounded-full"></div>
+          <div className="absolute top-0 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
         )}
       </button>
       
       <button 
-        onClick={() => setCurrentView('fuel')} 
-        className={`flex flex-col items-center gap-1 transition-all ${currentView === 'fuel' ? 'text-blue-400' : 'text-gray-400'}`}
+        onClick={() => setCurrentView('data')} 
+        className={`flex flex-col items-center gap-1 transition-all ${currentView === 'data' ? currentTheme.colors.accent : currentTheme.colors.textSecondary}`}
       >
-        <Fuel className="w-6 h-6" />
-        <span className="text-[10px]">SOS</span>
+        <History className="w-5 h-5" />
+        <span className="text-[9px]">Dados</span>
+      </button>
+      
+      <button 
+        onClick={() => setCurrentView('fuel')} 
+        className={`flex flex-col items-center gap-1 transition-all ${currentView === 'fuel' ? currentTheme.colors.accent : currentTheme.colors.textSecondary}`}
+      >
+        <Fuel className="w-5 h-5" />
+        <span className="text-[9px]">SOS</span>
       </button>
       
       <button 
         onClick={() => setCurrentView('profile')} 
-        className={`flex flex-col items-center gap-1 transition-all ${currentView === 'profile' ? 'text-blue-400' : 'text-gray-400'}`}
+        className={`flex flex-col items-center gap-1 transition-all ${currentView === 'profile' ? currentTheme.colors.accent : currentTheme.colors.textSecondary}`}
       >
-        <User className="w-6 h-6" />
-        <span className="text-[10px]">Perfil</span>
+        <User className="w-5 h-5" />
+        <span className="text-[9px]">Perfil</span>
       </button>
     </div>
   );
@@ -492,20 +779,12 @@ export default function AlertaBHApp() {
   // ============================================
   if (!isAuthenticated) return <LoginScreen onLogin={handleLogin} />;
 
-  const currentThemeColor = themes.find(t => t.id === selectedTheme)?.preview || 'bg-gray-900';
-
   return (
-    <div className={`flex flex-col h-screen ${currentThemeColor} max-w-md mx-auto overflow-hidden transition-colors duration-500`}>
+    <div className={`flex flex-col h-screen ${currentTheme.colors.bg} max-w-md mx-auto overflow-hidden transition-all duration-500`}>
       
-      {/* CSS para animações */}
       <style>{`
-        @keyframes ping { 
-          75%, 100% { transform: scale(2); opacity: 0; } 
-        }
-        @keyframes radar { 
-          0% { transform: scale(0.5); opacity: 0.8; } 
-          100% { transform: scale(2.5); opacity: 0; } 
-        }
+        @keyframes ping { 75%, 100% { transform: scale(2); opacity: 0; } }
+        @keyframes radar { 0% { transform: scale(0.5); opacity: 0.8; } 100% { transform: scale(2.5); opacity: 0; } }
       `}</style>
 
       {/* ========================================== */}
@@ -513,26 +792,31 @@ export default function AlertaBHApp() {
       {/* ========================================== */}
       {currentView === 'map' && (
         <>
-          {/* Header */}
-          <div className={`p-4 shadow-lg z-[1001] relative flex justify-between items-center ${userData.type === 'admin' ? 'bg-red-900' : 'bg-blue-600'} text-white`}>
+          <div className={`p-4 shadow-lg z-[1001] relative flex justify-between items-center ${userData.type === 'admin' ? 'bg-red-900' : currentTheme.colors.header} ${currentTheme.colors.text}`}>
             <div className="flex items-center gap-3">
               <Menu 
-                className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity" 
+                className="w-6 h-6 cursor-pointer hover:opacity-80" 
                 onClick={() => setCurrentView('settings')} 
               />
               <div>
-                <h1 className="text-xl font-bold leading-none">AlertaBH</h1>
+                <h1 className="text-xl font-bold">AlertaBH</h1>
                 {userData.type === 'admin' && (
-                  <span className="text-[10px] bg-white text-red-900 px-1 rounded font-bold uppercase">Admin Mode</span>
+                  <span className="text-[10px] bg-white text-red-900 px-1 rounded font-bold">ADMIN</span>
                 )}
               </div>
             </div>
-            <div className="flex gap-4">
+            <div className="flex gap-3 items-center">
+              <button
+                onClick={() => setMapType(mapType === 'tactical' ? 'cartographic' : 'tactical')}
+                className="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition-all"
+                title="Alternar tipo de mapa"
+              >
+                <Layers className="w-5 h-5" />
+              </button>
               {isPremium && <Crown className="w-5 h-5 text-yellow-400" />}
             </div>
           </div>
 
-          {/* Mapa */}
           <div className="flex-1 relative z-0">
             <MapContainer 
               center={[-19.9167, -43.9345]} 
@@ -541,8 +825,8 @@ export default function AlertaBHApp() {
               zoomControl={false}
             >
               <TileLayer 
-                attribution='&copy; OpenStreetMap' 
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
+                attribution={mapTiles[mapType].attribution}
+                url={mapTiles[mapType].url}
               />
               <LocationMarker position={userPosition} />
               
@@ -562,11 +846,12 @@ export default function AlertaBHApp() {
                       <span className="text-xs text-gray-500">{alert.time} atrás</span>
                       <br/>
                       <span className="text-xs text-gray-600">Por: {alert.createdBy}</span>
+                      {alert.hasPhoto && <span className="text-xs block text-blue-600">📸 Com foto</span>}
                       
                       {userData.type === 'admin' && (
                         <button 
                           onClick={() => handleDeleteAlert(alert.id)} 
-                          className="mt-2 w-full bg-red-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1 hover:bg-red-700 font-bold shadow transition-all"
+                          className="mt-2 w-full bg-red-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1 hover:bg-red-700 font-bold"
                         >
                           <Trash2 className="w-3 h-3" /> REMOVER
                         </button>
@@ -577,29 +862,33 @@ export default function AlertaBHApp() {
               ))}
             </MapContainer>
 
-            {/* Botão GPS */}
+            {/* Busca de Endereço */}
+            <MapSearch onLocationFound={handleLocationFound} />
+
             <button 
               onClick={handleGPSLock} 
-              className="absolute top-4 right-4 z-[999] bg-white p-2 rounded-full shadow-lg text-gray-700 hover:shadow-xl transition-all"
+              className="absolute top-32 right-4 z-[999] bg-white p-2 rounded-full shadow-lg hover:shadow-xl transition-all"
             >
-              <Navigation className={`w-6 h-6 ${gpsLocked ? 'text-blue-500 fill-blue-500' : ''}`} />
+              <Navigation className={`w-6 h-6 ${gpsLocked ? 'text-blue-500 fill-blue-500' : 'text-gray-700'}`} />
             </button>
 
-            {/* Botão Report */}
             <button 
               onClick={() => { 
-                resetReportFlow(); // RESET COMPLETO antes de abrir
+                resetReportFlow(); 
                 setCurrentView('report'); 
               }} 
-              className="absolute bottom-24 right-4 z-[999] w-16 h-16 bg-red-500 rounded-full shadow-2xl flex items-center justify-center hover:bg-red-600 border-4 border-white animate-bounce transition-all"
+              className="absolute bottom-24 right-4 z-[999] w-16 h-16 bg-red-500 rounded-full shadow-2xl flex items-center justify-center hover:bg-red-600 border-4 border-white animate-bounce"
             >
               <Plus className="w-8 h-8 text-white" />
             </button>
 
-            {/* Contador de Alertas */}
             <div className="absolute top-4 left-4 z-[999] bg-white rounded-lg shadow-lg p-2 flex items-center gap-2">
               <div className="w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
               <span className="text-xs font-bold text-gray-800">{alerts.length} alertas</span>
+            </div>
+
+            <div className="absolute bottom-24 left-4 z-[999] bg-white rounded-lg shadow-lg px-3 py-2">
+              <span className="text-xs font-bold text-gray-800">{mapTiles[mapType].name}</span>
             </div>
           </div>
           
@@ -612,9 +901,9 @@ export default function AlertaBHApp() {
       {/* ========================================== */}
       {currentView === 'report' && (
         <>
-          <div className="bg-gray-800 text-white p-4 flex items-center justify-between">
+          <div className={`${currentTheme.colors.card} ${currentTheme.colors.text} p-4 flex items-center justify-between`}>
             <button onClick={() => {
-              resetReportFlow(); // RESET ao fechar
+              resetReportFlow();
               setCurrentView('map');
             }}>
               <X className="w-6 h-6" />
@@ -623,24 +912,23 @@ export default function AlertaBHApp() {
             <div className="w-6"></div>
           </div>
           
-          {/* Step 1: GPS */}
           {reportStep === 1 && (
-            <div className="flex-1 flex flex-col items-center justify-center text-white p-6">
-              <Navigation className={`w-20 h-20 mb-4 ${gpsLocked ? 'text-green-500' : 'text-blue-500 animate-pulse'}`} />
+            <div className={`flex-1 flex flex-col items-center justify-center ${currentTheme.colors.text} p-6`}>
+              <Navigation className={`w-20 h-20 mb-4 ${gpsLocked ? 'text-green-500' : currentTheme.colors.accent + ' animate-pulse'}`} />
               <h3 className="text-xl font-bold mb-4">
-                {gpsLocked ? 'Localização Confirmada ✓' : 'Aguardando GPS...'}
+                {gpsLocked ? '✓ Localização Confirmada' : 'Aguardando GPS...'}
               </h3>
               {!gpsLocked ? (
                 <button 
                   onClick={handleGPSLock} 
-                  className="bg-blue-600 px-6 py-3 rounded-full font-bold hover:bg-blue-500 transition-all"
+                  className={`${currentTheme.colors.button} px-6 py-3 rounded-full font-bold text-white`}
                 >
                   Ativar GPS
                 </button>
               ) : (
                 <button 
                   onClick={() => setReportStep(2)} 
-                  className="bg-green-600 px-6 py-3 rounded-full font-bold hover:bg-green-500 transition-all"
+                  className="bg-green-600 hover:bg-green-500 px-6 py-3 rounded-full font-bold text-white"
                 >
                   Continuar →
                 </button>
@@ -648,24 +936,36 @@ export default function AlertaBHApp() {
             </div>
           )}
 
-          {/* Step 2: Foto */}
           {reportStep === 2 && (
-            <div className="flex-1 bg-black flex items-center justify-center relative">
-              <Camera className="w-16 h-16 text-gray-500" />
-              <button 
-                onClick={handlePhotoCapture} 
-                className="absolute bottom-10 w-16 h-16 border-4 border-white rounded-full bg-white/20 hover:bg-white/30 transition-all"
-              >
-              </button>
-              <p className="absolute bottom-32 text-white text-sm">Capture a ocorrência (opcional)</p>
+            <div className="flex-1 bg-black flex flex-col items-center justify-center relative">
+              {!hasPhoto ? (
+                <>
+                  <Camera className="w-20 h-20 text-gray-400 mb-4" />
+                  <p className="text-white text-sm mb-6">Tire uma foto do local (opcional)</p>
+                  <button 
+                    onClick={handleCameraCapture} 
+                    className="w-20 h-20 border-4 border-white rounded-full bg-white/20 hover:bg-white/30 mb-4"
+                  />
+                  <button
+                    onClick={() => setReportStep(3)}
+                    className="text-white underline text-sm"
+                  >
+                    Pular foto →
+                  </button>
+                </>
+              ) : (
+                <>
+                  {photoData && <img src={photoData} alt="Captura" className="max-w-full max-h-96 object-contain mb-4" />}
+                  <CheckCircle className="w-16 h-16 text-green-500 animate-pulse" />
+                </>
+              )}
             </div>
           )}
 
-          {/* Step 3: Tipo de Alerta */}
           {reportStep === 3 && (
             <div className="flex-1 p-6 overflow-y-auto">
-              <h3 className="text-white text-xl font-bold mb-4">Tipo de Alerta</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <h3 className={`${currentTheme.colors.text} text-xl font-bold mb-4`}>Tipo de Alerta</h3>
+              <div className="grid grid-cols-2 gap-3">
                 {alertTypes.map(t => (
                   <button 
                     key={t.id} 
@@ -673,22 +973,21 @@ export default function AlertaBHApp() {
                       setAlertType(t.label); 
                       setReportStep(4);
                     }} 
-                    className="bg-gray-800 p-4 rounded-xl border border-gray-600 hover:border-blue-500 hover:bg-gray-700 flex flex-col items-center transition-all"
+                    className={`${currentTheme.colors.card} p-4 rounded-xl border ${currentTheme.colors.border} hover:border-blue-500 flex flex-col items-center`}
                   >
-                    <div className="text-4xl mb-2">{t.icon}</div>
-                    <span className="text-white font-bold text-sm text-center">{t.label}</span>
+                    <div className="text-3xl mb-2">{t.icon}</div>
+                    <span className={`${currentTheme.colors.text} font-bold text-xs text-center`}>{t.label}</span>
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Step 4: Duração */}
           {reportStep === 4 && (
-            <div className="flex-1 p-6 text-white overflow-y-auto">
+            <div className={`flex-1 p-6 ${currentTheme.colors.text} overflow-y-auto`}>
               <h3 className="text-xl font-bold mb-4">Duração do Alerta</h3>
-              <div className="bg-gray-800 p-4 rounded mb-4 flex items-center gap-4">
-                <Clock className="text-blue-400"/> 
+              <div className={`${currentTheme.colors.card} p-4 rounded mb-4 flex items-center gap-4`}>
+                <Clock className={currentTheme.colors.accent}/> 
                 <input 
                   type="range" 
                   className="flex-1" 
@@ -700,49 +999,47 @@ export default function AlertaBHApp() {
                 />
                 <span className="w-12 text-right">{expirationTime}m</span>
               </div>
-              <div className="bg-gray-800 rounded-xl p-4 mb-4">
-                <p className="text-sm text-gray-400 mb-2">Resumo:</p>
-                <p className="text-white"><strong>Tipo:</strong> {alertType}</p>
-                <p className="text-white"><strong>Duração:</strong> {expirationTime} minutos</p>
-                <p className="text-white"><strong>Local:</strong> {gpsLocked ? 'GPS Ativo' : 'Localização Manual'}</p>
-                <p className="text-white"><strong>Criado por:</strong> {userData?.name}</p>
+              <div className={`${currentTheme.colors.card} rounded-xl p-4 mb-4`}>
+                <p className={`text-sm ${currentTheme.colors.textSecondary} mb-2`}>Resumo:</p>
+                <p><strong>Tipo:</strong> {alertType}</p>
+                <p><strong>Duração:</strong> {expirationTime} min</p>
+                <p><strong>GPS:</strong> {gpsLocked ? '✓ Ativo' : 'Manual'}</p>
+                <p><strong>Foto:</strong> {hasPhoto ? '✓ Adicionada' : 'Não'}</p>
               </div>
               <button 
                 onClick={handleSubmitReport} 
-                className="w-full bg-red-600 hover:bg-red-500 py-4 rounded-xl font-bold flex justify-center gap-2 mt-4 transition-all"
+                className="w-full bg-red-600 hover:bg-red-500 text-white py-4 rounded-xl font-bold flex justify-center gap-2"
               >
                 <Send/> Enviar Alerta
               </button>
             </div>
           )}
 
-          {/* Step 5: Sucesso */}
           {reportStep === 5 && (
-            <div className="flex-1 flex flex-col items-center justify-center text-white">
+            <div className={`flex-1 flex flex-col items-center justify-center ${currentTheme.colors.text}`}>
               <CheckCircle className="w-20 h-20 text-green-500 mb-4 animate-bounce" />
               <h2 className="text-2xl font-bold">Alerta Enviado!</h2>
-              <p className="text-gray-400 mt-2">A comunidade foi notificada</p>
+              <p className={currentTheme.colors.textSecondary + " mt-2"}>Comunidade notificada</p>
             </div>
           )}
         </>
       )}
 
       {/* ========================================== */}
-      {/* VIEW: PERFIL (REAL) */}
+      {/* VIEW: PERFIL */}
       {/* ========================================== */}
       {currentView === 'profile' && (
         <>
-          <div className="bg-gray-800 p-4 flex items-center justify-between border-b border-gray-700">
-            <h2 className="text-white font-bold text-xl">Perfil</h2>
+          <div className={`${currentTheme.colors.card} p-4 flex items-center justify-between border-b ${currentTheme.colors.border}`}>
+            <h2 className={`${currentTheme.colors.text} font-bold text-xl`}>Perfil</h2>
             <Settings 
-              className="w-6 h-6 text-gray-400 cursor-pointer hover:text-white transition-colors" 
+              className={`w-6 h-6 ${currentTheme.colors.textSecondary} cursor-pointer hover:opacity-80`}
               onClick={() => setCurrentView('settings')} 
             />
           </div>
 
           <div className="flex-1 overflow-y-auto p-6">
-            {/* Card do Usuário */}
-            <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl p-6 mb-6 text-white">
+            <div className={`bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl p-6 mb-6 text-white`}>
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center text-4xl">
                   {userData.type === 'admin' ? '👮‍♂️' : '👤'}
@@ -760,54 +1057,55 @@ export default function AlertaBHApp() {
                   <span>{userStats.points} pts</span>
                   <span>Rank #{userStats.ranking}</span>
                 </div>
-                <div className="w-full bg-white bg-opacity-20 rounded-full h-2">
-                  <div className="bg-white rounded-full h-2" style={{width: `${Math.min(100, (userStats.points / 500) * 100)}%`}}></div>
+                <div className="w-full bg-white/20 rounded-full h-2">
+                  <div className="bg-white rounded-full h-2 transition-all" style={{width: `${Math.min(100, (userStats.points / 1000) * 100)}%`}}></div>
                 </div>
               </div>
             </div>
 
-            {/* Estatísticas REAIS */}
             <div className="grid grid-cols-3 gap-3 mb-6">
-              <div className="bg-gray-800 rounded-xl p-4 text-center">
-                <MapPin className="w-6 h-6 text-blue-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">{userStats.totalAlerts}</p>
-                <p className="text-xs text-gray-400">Alertas</p>
+              <div className={`${currentTheme.colors.card} rounded-xl p-4 text-center`}>
+                <MapPin className={`w-6 h-6 ${currentTheme.colors.accent} mx-auto mb-2`} />
+                <p className={`text-2xl font-bold ${currentTheme.colors.text}`}>{userStats.totalAlerts}</p>
+                <p className={`text-xs ${currentTheme.colors.textSecondary}`}>Alertas</p>
               </div>
-              <div className="bg-gray-800 rounded-xl p-4 text-center">
+              <div className={`${currentTheme.colors.card} rounded-xl p-4 text-center`}>
                 <CheckCircle className="w-6 h-6 text-green-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">{userStats.verified}</p>
-                <p className="text-xs text-gray-400">Criados</p>
+                <p className={`text-2xl font-bold ${currentTheme.colors.text}`}>{userStats.verified}</p>
+                <p className={`text-xs ${currentTheme.colors.textSecondary}`}>Criados</p>
               </div>
-              <div className="bg-gray-800 rounded-xl p-4 text-center">
+              <div className={`${currentTheme.colors.card} rounded-xl p-4 text-center`}>
                 <Award className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">{userStats.badges}</p>
-                <p className="text-xs text-gray-400">Conquistas</p>
+                <p className={`text-2xl font-bold ${currentTheme.colors.text}`}>{userStats.badges}</p>
+                <p className={`text-xs ${currentTheme.colors.textSecondary}`}>Conquistas</p>
               </div>
             </div>
 
-            {/* Badges REAIS */}
             <div className="mb-6">
-              <h3 className="text-white font-bold text-lg mb-3 flex items-center gap-2">
-                <Star className="w-5 h-5 text-yellow-400" />
-                Conquistas
+              <h3 className={`${currentTheme.colors.text} font-bold text-lg mb-3 flex items-center gap-2`}>
+                <Trophy className="w-5 h-5 text-yellow-400" />
+                Conquistas Desbloqueadas
               </h3>
               <div className="grid grid-cols-4 gap-3">
-                {badges.map(badge => (
-                  <div 
-                    key={badge.id} 
-                    className={`rounded-xl p-3 text-center ${badge.earned ? 'bg-gradient-to-br from-yellow-500 to-orange-500' : 'bg-gray-800 opacity-40'}`}
-                  >
-                    <div className="text-2xl mb-1">{badge.icon}</div>
-                    <p className="text-xs text-white font-semibold">{badge.name}</p>
-                  </div>
-                ))}
+                {achievements.map(achievement => {
+                  const unlocked = unlockedAchievements.includes(achievement.id);
+                  return (
+                    <div 
+                      key={achievement.id} 
+                      className={`rounded-xl p-3 text-center ${unlocked ? 'bg-gradient-to-br from-yellow-500 to-orange-500' : currentTheme.colors.card + ' opacity-40'}`}
+                      title={achievement.description}
+                    >
+                      <div className="text-2xl mb-1">{achievement.icon}</div>
+                      <p className="text-xs text-white font-semibold leading-tight">{achievement.name}</p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Botão Premium */}
             <button 
               onClick={() => setCurrentView('premium')} 
-              className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:shadow-lg transition-all"
+              className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:shadow-lg"
             >
               <Crown className="w-5 h-5" /> Seja Premium
             </button>
@@ -818,50 +1116,278 @@ export default function AlertaBHApp() {
       )}
 
       {/* ========================================== */}
-      {/* VIEW: NOTIFICAÇÕES (REAL) */}
+      {/* VIEW: DADOS (ESTRUTURA COMPLETA) */}
+      {/* ========================================== */}
+      {currentView === 'data' && (
+        <>
+          <div className={`${currentTheme.colors.card} p-4 flex items-center justify-between border-b ${currentTheme.colors.border}`}>
+            <h2 className={`${currentTheme.colors.text} font-bold text-xl`}>Dados do Sistema</h2>
+            <TrendingUp className={`w-6 h-6 ${currentTheme.colors.accent}`} />
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4">
+            {/* Card de Estatísticas Gerais */}
+            <div className={`${currentTheme.colors.card} rounded-xl p-4 mb-4 border ${currentTheme.colors.border}`}>
+              <h3 className={`${currentTheme.colors.text} font-bold mb-3 flex items-center gap-2`}>
+                <CheckSquare className={`w-5 h-5 ${currentTheme.colors.accent}`} />
+                Resumo Geral
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className={`${currentTheme.colors.card} border ${currentTheme.colors.border} rounded-lg p-3`}>
+                  <p className={`${currentTheme.colors.textSecondary} text-xs mb-1`}>Total Alertas</p>
+                  <p className={`${currentTheme.colors.text} text-2xl font-bold`}>{alerts.length}</p>
+                </div>
+                <div className={`${currentTheme.colors.card} border ${currentTheme.colors.border} rounded-lg p-3`}>
+                  <p className={`${currentTheme.colors.textSecondary} text-xs mb-1`}>Notificações</p>
+                  <p className={`${currentTheme.colors.text} text-2xl font-bold`}>{notifications.length}</p>
+                </div>
+                <div className={`${currentTheme.colors.card} border ${currentTheme.colors.border} rounded-lg p-3`}>
+                  <p className={`${currentTheme.colors.textSecondary} text-xs mb-1`}>Conquistas</p>
+                  <p className={`${currentTheme.colors.text} text-2xl font-bold`}>{unlockedAchievements.length}/{achievements.length}</p>
+                </div>
+                <div className={`${currentTheme.colors.card} border ${currentTheme.colors.border} rounded-lg p-3`}>
+                  <p className={`${currentTheme.colors.textSecondary} text-xs mb-1`}>Status</p>
+                  <p className={`${currentTheme.colors.text} text-lg font-bold`}>{isPremium ? '👑 Premium' : 'Free'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Alertas Criados */}
+            <div className={`${currentTheme.colors.card} rounded-xl p-4 mb-4 border ${currentTheme.colors.border}`}>
+              <h3 className={`${currentTheme.colors.text} font-bold mb-3 flex items-center gap-2`}>
+                <MapPin className={`w-5 h-5 ${currentTheme.colors.accent}`} />
+                Meus Alertas ({alerts.length})
+              </h3>
+              {alerts.length === 0 ? (
+                <p className={`${currentTheme.colors.textSecondary} text-sm text-center py-4`}>Nenhum alerta criado ainda</p>
+              ) : (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {alerts.slice(0, 10).map(alert => (
+                    <div key={alert.id} className={`${currentTheme.colors.card} border ${currentTheme.colors.border} rounded-lg p-3 flex items-center gap-3`}>
+                      <div className="text-2xl">
+                        {alertTypes.find(t => t.id === alert.type)?.icon || '📍'}
+                      </div>
+                      <div className="flex-1">
+                        <p className={`${currentTheme.colors.text} font-semibold text-sm`}>{alert.type}</p>
+                        <p className={`${currentTheme.colors.textSecondary} text-xs`}>{alert.location}</p>
+                        <p className={`${currentTheme.colors.textSecondary} text-xs`}>{alert.time} atrás</p>
+                      </div>
+                      {alert.hasPhoto && (
+                        <Camera className="w-4 h-4 text-blue-500" />
+                      )}
+                    </div>
+                  ))}
+                  {alerts.length > 10 && (
+                    <p className={`${currentTheme.colors.textSecondary} text-xs text-center pt-2`}>
+                      E mais {alerts.length - 10} alertas...
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Conquistas Desbloqueadas */}
+            <div className={`${currentTheme.colors.card} rounded-xl p-4 mb-4 border ${currentTheme.colors.border}`}>
+              <h3 className={`${currentTheme.colors.text} font-bold mb-3 flex items-center gap-2`}>
+                <Trophy className={`w-5 h-5 ${currentTheme.colors.accent}`} />
+                Conquistas Desbloqueadas
+              </h3>
+              {unlockedAchievements.length === 0 ? (
+                <p className={`${currentTheme.colors.textSecondary} text-sm text-center py-4`}>Nenhuma conquista desbloqueada</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  {achievements.filter(a => unlockedAchievements.includes(a.id)).map(achievement => (
+                    <div key={achievement.id} className="bg-gradient-to-br from-yellow-500 to-orange-500 rounded-lg p-3 text-center">
+                      <div className="text-3xl mb-1">{achievement.icon}</div>
+                      <p className="text-white text-xs font-bold">{achievement.name}</p>
+                      <p className="text-yellow-100 text-xs">+{achievement.points} pts</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Configurações Atuais */}
+            <div className={`${currentTheme.colors.card} rounded-xl p-4 mb-4 border ${currentTheme.colors.border}`}>
+              <h3 className={`${currentTheme.colors.text} font-bold mb-3 flex items-center gap-2`}>
+                <Settings className={`w-5 h-5 ${currentTheme.colors.accent}`} />
+                Configurações Atuais
+              </h3>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className={`${currentTheme.colors.textSecondary} text-sm`}>Tema Ativo:</span>
+                  <span className={`${currentTheme.colors.text} font-semibold`}>
+                    {themes[selectedTheme]?.name}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className={`${currentTheme.colors.textSecondary} text-sm`}>Tipo de Mapa:</span>
+                  <span className={`${currentTheme.colors.text} font-semibold`}>
+                    {mapTiles[mapType].name}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className={`${currentTheme.colors.textSecondary} text-sm`}>Conta:</span>
+                  <span className={`${currentTheme.colors.text} font-semibold`}>
+                    {userData.type === 'admin' ? '👮‍♂️ Admin' : '👤 Usuário'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className={`${currentTheme.colors.textSecondary} text-sm`}>Plano:</span>
+                  <span className={`${currentTheme.colors.text} font-semibold`}>
+                    {isPremium ? '👑 Premium' : 'Gratuito'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Dados Técnicos */}
+            <div className={`${currentTheme.colors.card} rounded-xl p-4 mb-4 border ${currentTheme.colors.border}`}>
+              <h3 className={`${currentTheme.colors.text} font-bold mb-3 flex items-center gap-2`}>
+                <Cloud className={`w-5 h-5 ${currentTheme.colors.accent}`} />
+                Dados Técnicos
+              </h3>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className={`${currentTheme.colors.textSecondary} text-sm`}>GPS Status:</span>
+                  <span className={`${currentTheme.colors.text} font-semibold`}>
+                    {gpsLocked ? '✓ Ativo' : '✗ Inativo'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className={`${currentTheme.colors.textSecondary} text-sm`}>Localização:</span>
+                  <span className={`${currentTheme.colors.text} font-semibold text-xs`}>
+                    {userPosition ? `${userPosition[0].toFixed(4)}, ${userPosition[1].toFixed(4)}` : 'N/A'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className={`${currentTheme.colors.textSecondary} text-sm`}>Busca Usada:</span>
+                  <span className={`${currentTheme.colors.text} font-semibold`}>
+                    {searchedLocation ? '✓ Sim' : '✗ Não'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Botões de Ação */}
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  const data = {
+                    alerts,
+                    notifications,
+                    selectedTheme,
+                    isPremium,
+                    unlockedAchievements,
+                    userStats,
+                    mapType,
+                    timestamp: new Date().toISOString()
+                  };
+                  console.log('📊 DADOS COMPLETOS:', data);
+                  alert('📊 Dados exibidos no console! (F12)');
+                }}
+                className={`w-full ${currentTheme.colors.button} text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2`}
+              >
+                <TrendingUp className="w-5 h-5" />
+                Ver JSON no Console
+              </button>
+
+              <button
+                onClick={() => {
+                  const data = {
+                    alerts,
+                    notifications,
+                    selectedTheme,
+                    isPremium,
+                    unlockedAchievements
+                  };
+                  const dataStr = JSON.stringify(data, null, 2);
+                  const blob = new Blob([dataStr], { type: 'application/json' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `alertabh-backup-${Date.now()}.json`;
+                  a.click();
+                  alert('💾 Arquivo JSON baixado!');
+                }}
+                className={`w-full ${currentTheme.colors.card} border-2 ${currentTheme.colors.border} ${currentTheme.colors.text} py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-opacity-80`}
+              >
+                <Download className="w-5 h-5" />
+                Exportar JSON
+              </button>
+
+              <button
+                onClick={() => {
+                  if (window.confirm('⚠️ Isso irá limpar TODOS os dados. Continuar?')) {
+                    setAlerts([]);
+                    setNotifications([]);
+                    setUnlockedAchievements([]);
+                    localStorage.removeItem('alertaBH_data');
+                    alert('🗑️ Todos os dados foram limpos!');
+                  }
+                }}
+                className="w-full bg-red-500/20 border-2 border-red-500 text-red-500 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-red-500/30"
+              >
+                <Trash2 className="w-5 h-5" />
+                Limpar Todos os Dados
+              </button>
+            </div>
+          </div>
+
+          {renderBottomNav()}
+        </>
+      )}
+
+      {/* ========================================== */}
+      {/* VIEW: NOTIFICAÇÕES (CLICÁVEIS) */}
       {/* ========================================== */}
       {currentView === 'notifications' && (
         <>
-          <div className="bg-gray-800 p-4 border-b border-gray-700 flex justify-between items-center">
-            <h2 className="text-white font-bold text-lg">Notificações</h2>
+          <div className={`${currentTheme.colors.card} p-4 border-b ${currentTheme.colors.border} flex justify-between items-center`}>
+            <h2 className={`${currentTheme.colors.text} font-bold text-lg`}>Notificações</h2>
             {notifications.length > 0 && (
-              <span className="text-xs text-gray-400">{notifications.length} itens</span>
+              <span className={`text-xs ${currentTheme.colors.textSecondary}`}>{notifications.length} itens</span>
             )}
           </div>
           
           <div className="flex-1 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-gray-400 p-6">
+              <div className={`flex flex-col items-center justify-center h-full ${currentTheme.colors.textSecondary} p-6`}>
                 <Bell className="w-16 h-16 mb-4 opacity-50" />
-                <p className="text-center">Nenhuma notificação ainda</p>
-                <p className="text-sm text-center mt-2">Crie alertas para ver notificações aqui</p>
+                <p className="text-center">Nenhuma notificação</p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-800">
+              <div className={`divide-y ${currentTheme.colors.border}`}>
                 {notifications.map(notif => (
                   <div 
                     key={notif.id} 
-                    className={`p-4 flex gap-4 ${!notif.read ? 'bg-gray-850' : ''}`}
+                    onClick={() => handleNotificationClick(notif)}
+                    className={`p-4 flex gap-4 cursor-pointer hover:bg-opacity-50 transition-all ${!notif.read ? 'bg-blue-500/10' : ''}`}
                   >
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
                       notif.type === 'created' ? 'bg-green-500' : 
                       notif.type === 'removed' ? 'bg-red-500' : 
                       notif.type === 'fuel' ? 'bg-orange-500' :
+                      notif.type === 'achievement' ? 'bg-yellow-500' :
                       'bg-blue-500'
                     }`}>
                       {notif.type === 'created' && <CheckCircle className="w-6 h-6 text-white" />}
                       {notif.type === 'removed' && <Trash2 className="w-6 h-6 text-white" />}
                       {notif.type === 'fuel' && <Fuel className="w-6 h-6 text-white" />}
-                      {notif.type === 'verified' && <Star className="w-6 h-6 text-white" />}
+                      {notif.type === 'achievement' && <Trophy className="w-6 h-6 text-white" />}
+                      {notif.type === 'search' && <MapPin className="w-6 h-6 text-white" />}
                     </div>
                     <div className="flex-1">
-                      <h4 className="text-white font-semibold text-sm">{notif.title}</h4>
-                      <p className="text-gray-400 text-sm">{notif.desc}</p>
-                      <p className="text-xs text-gray-500 mt-1">{notif.time}</p>
+                      <h4 className={`${currentTheme.colors.text} font-semibold text-sm`}>{notif.title}</h4>
+                      <p className={`${currentTheme.colors.textSecondary} text-sm`}>{notif.desc}</p>
+                      <p className={`text-xs ${currentTheme.colors.textSecondary} mt-1`}>{notif.time}</p>
                     </div>
                     <button 
-                      onClick={() => handleDeleteNotification(notif.id)}
-                      className="text-gray-500 hover:text-red-500 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteNotification(notif.id);
+                      }}
+                      className={`${currentTheme.colors.textSecondary} hover:text-red-500`}
                     >
                       <X className="w-5 h-5" />
                     </button>
@@ -876,39 +1402,35 @@ export default function AlertaBHApp() {
       )}
 
       {/* ========================================== */}
-      {/* VIEW: COMBUSTÍVEL (SOS) */}
+      {/* VIEW: COMBUSTÍVEL */}
       {/* ========================================== */}
       {currentView === 'fuel' && (
         <>
-          <div className="bg-gray-800 p-4 flex items-center justify-between border-b border-gray-700">
-            <h2 className="text-white font-bold text-xl">Entrega de Combustível</h2>
-            <Fuel className="w-6 h-6 text-blue-400" />
+          <div className={`${currentTheme.colors.card} p-4 flex items-center justify-between border-b ${currentTheme.colors.border}`}>
+            <h2 className={`${currentTheme.colors.text} font-bold text-xl`}>SOS Combustível</h2>
+            <Fuel className={`w-6 h-6 ${currentTheme.colors.accent}`} />
           </div>
 
           <div className="flex-1 overflow-y-auto p-4">
-            {/* Banner */}
             <div className="bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl p-6 mb-6 text-white">
               <h3 className="text-2xl font-bold mb-2">Pane Seca?</h3>
-              <p className="text-sm opacity-90">Entregamos combustível em até 30 minutos!</p>
+              <p className="text-sm opacity-90">Entregamos em até 30 minutos!</p>
             </div>
 
-            {/* Seleção de Combustível */}
             <div className="mb-6">
-              <h4 className="text-white font-bold mb-3">Escolha o Combustível</h4>
+              <h4 className={`${currentTheme.colors.text} font-bold mb-3`}>Combustível</h4>
               <div className="space-y-3">
                 {fuelOptions.map(fuel => (
                   <button 
                     key={fuel.id} 
                     onClick={() => setFuelType(fuel.id)} 
-                    className={`w-full bg-gray-800 rounded-xl p-4 flex items-center justify-between border-2 transition-all hover:bg-gray-700 ${
-                      fuelType === fuel.id ? 'border-blue-500' : 'border-transparent'
-                    }`}
+                    className={`w-full ${currentTheme.colors.card} rounded-xl p-4 flex items-center justify-between border-2 ${fuelType === fuel.id ? 'border-blue-500' : currentTheme.colors.border}`}
                   >
                     <div className="flex items-center gap-3">
                       <div className="text-3xl">{fuel.icon}</div>
                       <div className="text-left">
-                        <p className="text-white font-semibold">{fuel.name}</p>
-                        <p className="text-gray-400 text-sm">R$ {fuel.price.toFixed(2)} / Litro</p>
+                        <p className={`${currentTheme.colors.text} font-semibold`}>{fuel.name}</p>
+                        <p className={`${currentTheme.colors.textSecondary} text-sm`}>R$ {fuel.price.toFixed(2)}/L</p>
                       </div>
                     </div>
                     {fuelType === fuel.id && <Check className="w-6 h-6 text-blue-500" />}
@@ -917,13 +1439,12 @@ export default function AlertaBHApp() {
               </div>
             </div>
 
-            {/* Quantidade */}
             <div className="mb-6">
-              <h4 className="text-white font-bold mb-3">Quantidade</h4>
-              <div className="bg-gray-800 rounded-xl p-4">
+              <h4 className={`${currentTheme.colors.text} font-bold mb-3`}>Quantidade</h4>
+              <div className={`${currentTheme.colors.card} rounded-xl p-4`}>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-white">Litros</span>
-                  <span className="text-blue-400 font-bold text-xl">{fuelQuantity}L</span>
+                  <span className={currentTheme.colors.text}>Litros</span>
+                  <span className={`${currentTheme.colors.accent} font-bold text-xl`}>{fuelQuantity}L</span>
                 </div>
                 <input 
                   type="range" 
@@ -934,46 +1455,37 @@ export default function AlertaBHApp() {
                   onChange={(e) => setFuelQuantity(e.target.value)} 
                   className="w-full" 
                 />
-                <div className="flex justify-between text-xs text-gray-400 mt-2">
-                  <span>5L</span>
-                  <span>10L</span>
-                  <span>15L</span>
-                  <span>20L</span>
+                <div className={`flex justify-between text-xs ${currentTheme.colors.textSecondary} mt-2`}>
+                  <span>5L</span><span>10L</span><span>15L</span><span>20L</span>
                 </div>
               </div>
             </div>
 
-            {/* Resumo do Pedido */}
             {fuelType && (
-              <div className="bg-gray-800 rounded-xl p-4 mb-4">
+              <div className={`${currentTheme.colors.card} rounded-xl p-4 mb-4`}>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-400">Subtotal</span>
-                  <span className="text-white font-bold">
+                  <span className={currentTheme.colors.textSecondary}>Subtotal</span>
+                  <span className={`${currentTheme.colors.text} font-bold`}>
                     R$ {(fuelOptions.find(f => f.id === fuelType)?.price * parseInt(fuelQuantity)).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-400">Taxa de Entrega</span>
-                  <span className="text-white font-bold">R$ 15,00</span>
+                  <span className={currentTheme.colors.textSecondary}>Taxa</span>
+                  <span className={`${currentTheme.colors.text} font-bold`}>R$ 15,00</span>
                 </div>
-                <div className="border-t border-gray-700 pt-2 mt-2 flex justify-between items-center">
-                  <span className="text-white font-bold">Total</span>
-                  <span className="text-blue-400 font-bold text-xl">
+                <div className={`border-t ${currentTheme.colors.border} pt-2 mt-2 flex justify-between items-center`}>
+                  <span className={`${currentTheme.colors.text} font-bold`}>Total</span>
+                  <span className={`${currentTheme.colors.accent} font-bold text-xl`}>
                     R$ {(fuelOptions.find(f => f.id === fuelType)?.price * parseInt(fuelQuantity) + 15).toFixed(2)}
                   </span>
                 </div>
               </div>
             )}
 
-            {/* Botão de Pedido */}
             <button 
               disabled={!fuelType} 
               onClick={handleFuelOrder}
-              className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${
-                fuelType 
-                  ? 'bg-blue-600 text-white hover:bg-blue-500' 
-                  : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-              }`}
+              className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 ${fuelType ? currentTheme.colors.button + ' text-white' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}
             >
               <Bike className="w-5 h-5" /> Solicitar Entrega
             </button>
@@ -988,30 +1500,27 @@ export default function AlertaBHApp() {
       {/* ========================================== */}
       {currentView === 'settings' && (
         <>
-          <div className="bg-gray-800 p-4 flex gap-3 text-white font-bold border-b border-gray-700">
-            <button onClick={() => setCurrentView('map')}>
-              <X className="w-6 h-6"/>
-            </button> 
+          <div className={`${currentTheme.colors.card} p-4 flex gap-3 ${currentTheme.colors.text} font-bold border-b ${currentTheme.colors.border}`}>
+            <button onClick={() => setCurrentView('map')}><X className="w-6 h-6"/></button> 
             Configurações
           </div>
           
           <div className="flex-1 p-6 overflow-y-auto">
-            {/* Nuvem & Backup */}
-            <div className="bg-gray-800 rounded-xl p-4 mb-6 border border-gray-700">
-              <h3 className="text-blue-400 font-bold mb-3 flex items-center gap-2">
+            <div className={`${currentTheme.colors.card} rounded-xl p-4 mb-6 border ${currentTheme.colors.border}`}>
+              <h3 className={`${currentTheme.colors.accent} font-bold mb-3 flex items-center gap-2`}>
                 <Cloud className="w-5 h-5"/> Nuvem & Backup
               </h3>
               <div className="flex gap-3">
                 <button 
                   onClick={handleCloudSave} 
-                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-lg flex flex-col items-center gap-1 transition-all"
+                  className={`flex-1 ${currentTheme.colors.card} border ${currentTheme.colors.border} hover:bg-opacity-80 ${currentTheme.colors.text} p-3 rounded-lg flex flex-col items-center gap-1`}
                 >
                   <Upload className="w-5 h-5 text-green-400"/> 
                   <span className="text-xs">Salvar</span>
                 </button>
                 <button 
                   onClick={handleCloudLoad} 
-                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-lg flex flex-col items-center gap-1 transition-all"
+                  className={`flex-1 ${currentTheme.colors.card} border ${currentTheme.colors.border} hover:bg-opacity-80 ${currentTheme.colors.text} p-3 rounded-lg flex flex-col items-center gap-1`}
                 >
                   <Download className="w-5 h-5 text-blue-400"/> 
                   <span className="text-xs">Restaurar</span>
@@ -1019,46 +1528,43 @@ export default function AlertaBHApp() {
               </div>
             </div>
 
-            {/* Temas */}
             <div className="mb-6">
-              <h3 className="text-gray-400 text-xs font-semibold uppercase mb-3">Personalização</h3>
-              <div className="bg-gray-800 rounded-xl p-4">
+              <h3 className={`${currentTheme.colors.textSecondary} text-xs font-semibold uppercase mb-3`}>Aparência</h3>
+              <div className={`${currentTheme.colors.card} rounded-xl p-4`}>
                 <div className="flex items-center gap-3 mb-4">
-                  <Palette className="w-5 h-5 text-blue-400" />
-                  <span className="text-white">Temas</span>
+                  <Palette className={`w-5 h-5 ${currentTheme.colors.accent}`} />
+                  <span className={currentTheme.colors.text}>Temas</span>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  {themes.map(theme => (
+                <div className="space-y-3">
+                  {Object.values(themes).map(theme => (
                     <button 
                       key={theme.id} 
                       onClick={() => {
                         if (theme.premium && !isPremium) { 
-                          alert("🔒 Tema Premium! Assine o plano Plus para desbloquear."); 
+                          alert("🔒 Tema Premium! Assine o plano Plus."); 
                         } else { 
                           setSelectedTheme(theme.id); 
                         }
                       }}
-                      className={`rounded-lg p-3 border-2 text-left transition-all relative ${
-                        selectedTheme === theme.id ? 'border-blue-500' : 'border-gray-700'
-                      } ${theme.premium && !isPremium ? 'opacity-60' : ''}`}
+                      className={`w-full rounded-lg p-4 border-2 text-left flex items-center justify-between ${selectedTheme === theme.id ? 'border-blue-500' : currentTheme.colors.border} ${theme.premium && !isPremium ? 'opacity-60' : ''}`}
                     >
-                      <div className={`h-12 rounded-lg mb-2 ${theme.preview}`}></div>
-                      <div className="flex justify-between items-center">
-                        <p className="text-white text-xs font-semibold">{theme.name}</p>
-                        {theme.premium && !isPremium && <Lock className="w-3 h-3 text-gray-400" />}
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded ${theme.colors.bg}`}></div>
+                        <span className={currentTheme.colors.text + " font-semibold"}>{theme.name}</span>
                       </div>
+                      {theme.premium && !isPremium && <Lock className="w-4 h-4 text-gray-400" />}
+                      {selectedTheme === theme.id && <Check className="w-5 h-5 text-blue-500" />}
                     </button>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* Logout */}
             <button 
               onClick={handleLogout} 
-              className="w-full bg-red-500 bg-opacity-20 border border-red-500 text-red-500 rounded-xl p-4 font-semibold flex items-center justify-center gap-3 hover:bg-opacity-30 transition-all"
+              className="w-full bg-red-500/20 border-2 border-red-500 text-red-500 rounded-xl p-4 font-semibold flex items-center justify-center gap-3 hover:bg-red-500/30"
             >
-              <LogOut className="w-5 h-5" /> Sair da conta
+              <LogOut className="w-5 h-5" /> Sair da Conta
             </button>
           </div>
         </>
@@ -1069,56 +1575,48 @@ export default function AlertaBHApp() {
       {/* ========================================== */}
       {currentView === 'premium' && (
         <>
-          <div className="bg-gray-800 p-4 flex items-center gap-3 border-b border-gray-700">
+          <div className={`${currentTheme.colors.card} p-4 flex items-center gap-3 border-b ${currentTheme.colors.border}`}>
             <button onClick={() => setCurrentView('profile')}>
-              <X className="w-6 h-6 text-white" />
+              <X className={`w-6 h-6 ${currentTheme.colors.text}`} />
             </button>
-            <h2 className="text-white font-bold text-xl">Premium</h2>
+            <h2 className={`${currentTheme.colors.text} font-bold text-xl`}>Premium</h2>
           </div>
           
           <div className="flex-1 overflow-y-auto p-4">
-            {/* Header */}
             <div className="text-center mb-6">
-              <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-3 animate-pulse">
                 <Crown className="w-10 h-10 text-white" />
               </div>
-              <h2 className="text-white text-2xl font-bold mb-2">Seja Premium</h2>
-              <p className="text-gray-400 text-sm">R$ 9,90/mês</p>
+              <h2 className={`${currentTheme.colors.text} text-2xl font-bold mb-2`}>Seja Premium</h2>
+              <p className={`${currentTheme.colors.textSecondary} text-sm`}>R$ 9,90/mês</p>
             </div>
 
-            {/* Plano */}
-            <div className="bg-gray-800 rounded-2xl p-5 border-2 border-blue-500 mb-4">
-              <h3 className="text-white text-xl font-bold mb-4">Plano Plus</h3>
+            <div className={`${currentTheme.colors.card} rounded-2xl p-5 border-2 border-yellow-500 mb-4`}>
+              <h3 className={`${currentTheme.colors.text} text-xl font-bold mb-4`}>Plano Plus</h3>
               <div className="space-y-2 mb-4">
-                <div className="flex items-center gap-3 text-white">
-                  <Check className="w-5 h-5 text-green-400"/>
-                  <span className="text-sm">Sem anúncios</span>
+                <div className={`flex items-center gap-3 ${currentTheme.colors.text}`}>
+                  <Check className="w-5 h-5 text-green-400"/><span className="text-sm">Sem anúncios</span>
                 </div>
-                <div className="flex items-center gap-3 text-white">
-                  <Check className="w-5 h-5 text-green-400"/>
-                  <span className="text-sm">Temas exclusivos</span>
+                <div className={`flex items-center gap-3 ${currentTheme.colors.text}`}>
+                  <Check className="w-5 h-5 text-green-400"/><span className="text-sm">2 Temas exclusivos</span>
                 </div>
-                <div className="flex items-center gap-3 text-white">
-                  <Check className="w-5 h-5 text-green-400"/>
-                  <span className="text-sm">Alertas prioritários</span>
+                <div className={`flex items-center gap-3 ${currentTheme.colors.text}`}>
+                  <Check className="w-5 h-5 text-green-400"/><span className="text-sm">Alertas prioritários</span>
                 </div>
-                <div className="flex items-center gap-3 text-white">
-                  <Check className="w-5 h-5 text-green-400"/>
-                  <span className="text-sm">Backup ilimitado</span>
+                <div className={`flex items-center gap-3 ${currentTheme.colors.text}`}>
+                  <Check className="w-5 h-5 text-green-400"/><span className="text-sm">Backup ilimitado</span>
                 </div>
               </div>
               <button 
                 onClick={() => { 
                   setIsPremium(true); 
-                  alert("✨ Bem-vindo ao Premium! Agora você tem acesso a todos os recursos exclusivos.");
+                  alert("✨ Bem-vindo ao Premium!");
                   setCurrentView('profile');
                 }} 
-                className={`w-full py-3 rounded-xl font-bold text-white transition-all ${
-                  isPremium ? 'bg-green-600' : 'bg-blue-600 hover:bg-blue-500'
-                }`} 
+                className={`w-full py-3 rounded-xl font-bold text-white ${isPremium ? 'bg-green-600' : 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400'}`}
                 disabled={isPremium}
               >
-                {isPremium ? '✓ Você já é Premium!' : 'Assinar Agora'}
+                {isPremium ? '✓ Você é Premium!' : 'Assinar Agora'}
               </button>
             </div>
           </div>
