@@ -47,7 +47,7 @@ function LocationMarker({ position }) {
   
   useEffect(() => {
     if (position) {
-      map.flyTo(position, 15, { animate: true, duration: 1.5 });
+      map.flyTo(position, 14, { animate: true, duration: 1 });
     }
   }, [position, map]);
 
@@ -92,15 +92,15 @@ function MapSearch({ onLocationFound }) {
   };
 
   return (
-    <div className="absolute top-20 left-4 right-4 z-[999] flex gap-2">
+    <div className="absolute top-3 right-16 left-4 z-[999] flex gap-2">
       <input
-        type="text"
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-        placeholder="Buscar endereço em BH..."
-        className="flex-1 bg-white rounded-lg shadow-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
+  type="text"
+  value={searchQuery}
+  onChange={(e) => setSearchQuery(e.target.value)}
+  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+  placeholder="Buscar endereço..."
+  className="flex-1 bg-white/95 backdrop-blur rounded-lg shadow-md px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+     />
       <button
         onClick={handleSearch}
         disabled={isSearching}
@@ -223,67 +223,67 @@ export default function AlertaBHApp() {
   // CONFIGURAÇÕES DE TEMAS (4 TEMAS COMPLETOS)
   // ============================================
   const themes = {
-    dark: {
-      id: 'dark',
-      name: 'Noturno Tático',
-      colors: {
-        bg: 'bg-gray-900',
-        header: 'bg-blue-600',
-        card: 'bg-gray-800',
-        text: 'text-white',
-        textSecondary: 'text-gray-400',
-        border: 'border-gray-700',
-        button: 'bg-blue-600 hover:bg-blue-500',
-        accent: 'text-blue-400'
-      },
-      premium: false
+  dark: {
+    id: 'dark',
+    name: 'Escuro Profissional',
+    colors: {
+      bg: 'bg-gray-950',
+      header: 'bg-gray-900',
+      card: 'bg-gray-900',
+      text: 'text-gray-100',
+      textSecondary: 'text-gray-400',
+      border: 'border-gray-800',
+      button: 'bg-gray-800 hover:bg-gray-700',
+      accent: 'text-blue-400'
     },
-    ocean: {
-      id: 'ocean',
-      name: 'Oceano Profundo',
-      colors: {
-        bg: 'bg-gradient-to-br from-blue-900 via-cyan-900 to-teal-900',
-        header: 'bg-gradient-to-r from-cyan-600 to-blue-600',
-        card: 'bg-cyan-900/80 backdrop-blur',
-        text: 'text-cyan-50',
-        textSecondary: 'text-cyan-300',
-        border: 'border-cyan-700',
-        button: 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500',
-        accent: 'text-cyan-400'
-      },
-      premium: false
+    premium: false
+  },
+  light: {
+    id: 'light',
+    name: 'Claro Minimalista',
+    colors: {
+      bg: 'bg-gray-50',
+      header: 'bg-white',
+      card: 'bg-white',
+      text: 'text-gray-900',
+      textSecondary: 'text-gray-600',
+      border: 'border-gray-200',
+      button: 'bg-gray-200 hover:bg-gray-300',
+      accent: 'text-blue-600'
     },
-    neon: {
-      id: 'neon',
-      name: 'Neon Cyberpunk',
-      colors: {
-        bg: 'bg-gradient-to-br from-purple-900 via-pink-900 to-indigo-900',
-        header: 'bg-gradient-to-r from-purple-600 to-pink-600',
-        card: 'bg-purple-900/80 backdrop-blur border-2 border-pink-500/50',
-        text: 'text-pink-50',
-        textSecondary: 'text-purple-300',
-        border: 'border-pink-500',
-        button: 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500',
-        accent: 'text-pink-400'
-      },
-      premium: true
+    premium: false
+  },
+  slate: {
+    id: 'slate',
+    name: 'Cinza Corporativo',
+    colors: {
+      bg: 'bg-slate-900',
+      header: 'bg-slate-800',
+      card: 'bg-slate-800',
+      text: 'text-slate-100',
+      textSecondary: 'text-slate-400',
+      border: 'border-slate-700',
+      button: 'bg-slate-700 hover:bg-slate-600',
+      accent: 'text-slate-300'
     },
-    sunset: {
-      id: 'sunset',
-      name: 'Pôr do Sol',
-      colors: {
-        bg: 'bg-gradient-to-br from-orange-900 via-red-900 to-yellow-900',
-        header: 'bg-gradient-to-r from-orange-600 to-red-600',
-        card: 'bg-orange-900/80 backdrop-blur',
-        text: 'text-orange-50',
-        textSecondary: 'text-orange-300',
-        border: 'border-orange-700',
-        button: 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500',
-        accent: 'text-orange-400'
-      },
-      premium: true
-    }
-  };
+    premium: true
+  },
+  blue: {
+    id: 'blue',
+    name: 'Azul Executivo',
+    colors: {
+      bg: 'bg-slate-950',
+      header: 'bg-blue-950',
+      card: 'bg-blue-950/50',
+      text: 'text-blue-50',
+      textSecondary: 'text-blue-300',
+      border: 'border-blue-900',
+      button: 'bg-blue-900 hover:bg-blue-800',
+      accent: 'text-blue-400'
+    },
+    premium: true
+  }
+};
 
   const currentTheme = themes[selectedTheme];
 
@@ -708,21 +708,19 @@ export default function AlertaBHApp() {
     }
   };
 
-  const handleLocationFound = (position, name) => {
-    setSearchedLocation({ position, name });
+ const handleLocationFound = (position, name) => {
+  setSearchedLocation({ position, name });
+  setUserPosition(position);
+  
+  // Perguntar se quer criar ocorrência
+  if (window.confirm(`📍 Local encontrado: ${name}\n\nDeseja criar uma ocorrência neste local?`)) {
+    resetReportFlow();
+    setGpsLocked(true);
     setUserPosition(position);
-    
-    // Adicionar notificação
-    const newNotif = {
-      id: Date.now(),
-      type: 'search',
-      title: '📍 Local Encontrado',
-      desc: name,
-      time: 'Agora',
-      read: false
-    };
-    setNotifications([newNotif, ...notifications]);
-  };
+    setCurrentView('report');
+    setReportStep(2); // Pular GPS, ir direto para foto
+  }
+};
 
   // ============================================
   // RENDER: BOTTOM NAVIGATION
@@ -866,11 +864,11 @@ export default function AlertaBHApp() {
             <MapSearch onLocationFound={handleLocationFound} />
 
             <button 
-              onClick={handleGPSLock} 
-              className="absolute top-32 right-4 z-[999] bg-white p-2 rounded-full shadow-lg hover:shadow-xl transition-all"
-            >
-              <Navigation className={`w-6 h-6 ${gpsLocked ? 'text-blue-500 fill-blue-500' : 'text-gray-700'}`} />
-            </button>
+  onClick={handleGPSLock} 
+  className="absolute bottom-32 right-3 z-[999] bg-white/90 backdrop-blur p-2 rounded-full shadow-md hover:shadow-lg transition-all"
+>
+  <Navigation className={`w-4 h-4 ${gpsLocked ? 'text-blue-500 fill-blue-500' : 'text-gray-700'}`} />
+</button>
 
             <button 
               onClick={() => { 
@@ -887,9 +885,6 @@ export default function AlertaBHApp() {
               <span className="text-xs font-bold text-gray-800">{alerts.length} alertas</span>
             </div>
 
-            <div className="absolute bottom-24 left-4 z-[999] bg-white rounded-lg shadow-lg px-3 py-2">
-              <span className="text-xs font-bold text-gray-800">{mapTiles[mapType].name}</span>
-            </div>
           </div>
           
           {renderBottomNav()}
