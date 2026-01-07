@@ -143,10 +143,8 @@ export default function AlertaBHApp() {
   
   // Map & GPS
   const [userPosition, setUserPosition] = useState(null);
-  const [alerts, setAlerts] = useState([
-    { id: 1, lat: -19.9167, lng: -43.9345, type: 'blitz', time: '5 min', verified: 3, location: 'Centro - Av. Amazonas' },
-    { id: 2, lat: -19.9300, lng: -43.9500, type: 'blitz', time: '12 min', verified: 7, location: 'Savassi - Av. Getúlio Vargas' },
-  ]);
+  const [alerts, setAlerts] = useState([]);
+  const [notifications, setNotifications] = useState([]);
 
   // Report Flow
   const [hasPhoto, setHasPhoto] = useState(false);
@@ -155,7 +153,6 @@ export default function AlertaBHApp() {
   const [expirationTime, setExpirationTime] = useState('30');
 
   // Configurações
-  const [notifications, setNotifications] = useState(true);
   const [notificationRadius, setNotificationRadius] = useState('5');
   const [selectedTheme, setSelectedTheme] = useState('dark');
 
@@ -166,21 +163,17 @@ export default function AlertaBHApp() {
   // ============================================
   // DADOS E CONFIGURAÇÕES
   // ============================================
+  
+  // Calcula estatísticas REAIS baseadas nos alertas
   const userStats = {
     name: userData?.name || 'Usuário',
     level: userData?.level || 1,
-    points: 2450,
-    ranking: 47,
-    totalAlerts: 89,
-    verified: 156,
-    badges: 8
+    points: alerts.length * 50, // 50 pontos por alerta
+    ranking: Math.max(1, 100 - alerts.length * 3), // Ranking melhora com alertas
+    totalAlerts: alerts.length,
+    verified: alerts.filter(a => a.createdBy === userData?.name).length,
+    badges: Math.min(8, Math.floor(alerts.length / 3)) // 1 badge a cada 3 alertas
   };
-
-  const recentNotifications = [
-    { id: 1, type: 'nearby', title: 'Blitz próxima!', desc: 'Av. Afonso Pena, 500m à frente', time: '2 min', read: false },
-    { id: 2, type: 'verified', title: 'Seu alerta foi verificado', desc: '5 pessoas confirmaram', time: '15 min', read: false },
-    { id: 3, type: 'badge', title: 'Nova conquista!', desc: 'Você ganhou o badge "Protetor"', time: '1h', read: true }
-  ];
 
   const alertTypes = [
     { id: 'blitz', label: 'Blitz Policial', icon: '🚔', color: 'red' },
@@ -204,24 +197,34 @@ export default function AlertaBHApp() {
   ];
 
   const badges = [
-    { id: 1, name: 'Novato', icon: '🌱', earned: true },
-    { id: 2, name: 'Vigilante', icon: '👁️', earned: true },
-    { id: 3, name: 'Protetor', icon: '🛡️', earned: true },
-    { id: 4, name: 'Herói', icon: '🦸', earned: false }
+    { id: 1, name: 'Novato', icon: '🌱', earned: alerts.length >= 1 },
+    { id: 2, name: 'Vigilante', icon: '👁️', earned: alerts.length >= 3 },
+    { id: 3, name: 'Protetor', icon: '🛡️', earned: alerts.length >= 5 },
+    { id: 4, name: 'Herói', icon: '🦸', earned: alerts.length >= 10 }
   ];
 
   // ============================================
   // FUNÇÕES DE NUVEM (LOCALSTORAGE)
   // ============================================
+  const saveToCloud = (dataToSave) => {
+    try {
+      localStorage.setItem('alertaBH_data', JSON.stringify({
+        ...dataToSave,
+        timestamp: new Date().toISOString()
+      }));
+    } catch (e) {
+      console.error('Erro ao salvar:', e);
+    }
+  };
+
   const handleCloudSave = () => {
     try {
-      const dataToSave = {
-        alerts: alerts,
-        selectedTheme: selectedTheme,
-        isPremium: isPremium,
-        timestamp: new Date().toISOString()
-      };
-      localStorage.setItem('alertaBH_data', JSON.stringify(dataToSave));
+      saveToCloud({
+        alerts,
+        notifications,
+        selectedTheme,
+        isPremium
+      });
       alert("☁️ Backup salvo com sucesso na nuvem!");
     } catch (e) {
       console.error('Erro ao salvar:', e);
@@ -235,6 +238,7 @@ export default function AlertaBHApp() {
       if (saved) {
         const data = JSON.parse(saved);
         setAlerts(data.alerts || []);
+        setNotifications(data.notifications || []);
         setSelectedTheme(data.selectedTheme || 'dark');
         setIsPremium(data.isPremium || false);
         alert("☁️ Dados restaurados com sucesso!");
@@ -259,7 +263,8 @@ export default function AlertaBHApp() {
       const saved = localStorage.getItem('alertaBH_data');
       if (saved) {
         const data = JSON.parse(saved);
-        setAlerts(data.alerts || alerts);
+        setAlerts(data.alerts || []);
+        setNotifications(data.notifications || []);
         setSelectedTheme(data.selectedTheme || 'dark');
         setIsPremium(data.isPremium || false);
       }
@@ -288,19 +293,44 @@ export default function AlertaBHApp() {
       const newAlerts = alerts.filter(a => a.id !== id);
       setAlerts(newAlerts);
       
-      // Salvar automaticamente após remover
-      try {
-        const dataToSave = {
-          alerts: newAlerts,
-          selectedTheme: selectedTheme,
-          isPremium: isPremium,
-          timestamp: new Date().toISOString()
-        };
-        localStorage.setItem('alertaBH_data', JSON.stringify(dataToSave));
-      } catch (e) {
-        console.error('Erro ao salvar após deletar:', e);
-      }
+      // Adicionar notificação sobre remoção
+      const removedAlert = alerts.find(a => a.id === id);
+      const newNotif = {
+        id: Date.now(),
+        type: 'removed',
+        title: 'Alerta Removido',
+        desc: `${removedAlert?.type} em ${removedAlert?.location}`,
+        time: 'Agora',
+        read: false
+      };
+      setNotifications(prev => [newNotif, ...prev]);
+      
+      saveToCloud({
+        alerts: newAlerts,
+        notifications: [newNotif, ...notifications],
+        selectedTheme,
+        isPremium
+      });
     }
+  };
+
+  const handleDeleteNotification = (id) => {
+    const newNotifications = notifications.filter(n => n.id !== id);
+    setNotifications(newNotifications);
+    saveToCloud({
+      alerts,
+      notifications: newNotifications,
+      selectedTheme,
+      isPremium
+    });
+  };
+
+  const resetReportFlow = () => {
+    setReportStep(1);
+    setAlertType('');
+    setHasPhoto(false);
+    setGpsLocked(false);
+    setExpirationTime('30');
   };
 
   const handleGPSLock = () => {
@@ -338,6 +368,7 @@ export default function AlertaBHApp() {
     setReportStep(5);
     
     setTimeout(() => {
+      const now = new Date();
       const newAlert = {
         id: Date.now(),
         lat: userPosition ? userPosition[0] : -19.9200,
@@ -345,30 +376,37 @@ export default function AlertaBHApp() {
         type: alertType.toLowerCase(),
         time: 'Agora',
         verified: 1,
-        location: 'Minha Localização'
+        location: 'Minha Localização',
+        createdBy: userData?.name,
+        createdAt: now.toISOString()
       };
       
       const newAlerts = [...alerts, newAlert];
       setAlerts(newAlerts);
       
-      // Salvar automaticamente
-      try {
-        const dataToSave = {
-          alerts: newAlerts,
-          selectedTheme: selectedTheme,
-          isPremium: isPremium,
-          timestamp: new Date().toISOString()
-        };
-        localStorage.setItem('alertaBH_data', JSON.stringify(dataToSave));
-      } catch (e) {
-        console.error('Erro ao salvar novo alerta:', e);
-      }
+      // Criar notificação REAL do novo alerta
+      const newNotif = {
+        id: Date.now(),
+        type: 'created',
+        title: 'Alerta Criado!',
+        desc: `${alertType} reportado com sucesso`,
+        time: 'Agora',
+        read: false
+      };
+      const newNotifications = [newNotif, ...notifications];
+      setNotifications(newNotifications);
       
-      // Reset e voltar ao mapa
+      // Salvar tudo
+      saveToCloud({
+        alerts: newAlerts,
+        notifications: newNotifications,
+        selectedTheme,
+        isPremium
+      });
+      
+      // Reset COMPLETO e voltar ao mapa
+      resetReportFlow();
       setCurrentView('map');
-      setReportStep(1);
-      setAlertType('');
-      setHasPhoto(false);
     }, 1500);
   };
 
@@ -382,6 +420,25 @@ export default function AlertaBHApp() {
     const total = (selectedFuel.price * parseInt(fuelQuantity) + 15).toFixed(2);
     
     if (window.confirm(`🚚 Confirmar pedido?\n\n${selectedFuel.name}\nQuantidade: ${fuelQuantity}L\nTotal: R$ ${total}\n\nTempo estimado: 30 minutos`)) {
+      // Criar notificação do pedido
+      const newNotif = {
+        id: Date.now(),
+        type: 'fuel',
+        title: 'Pedido Confirmado!',
+        desc: `${fuelQuantity}L de ${selectedFuel.name} - R$ ${total}`,
+        time: 'Agora',
+        read: false
+      };
+      const newNotifications = [newNotif, ...notifications];
+      setNotifications(newNotifications);
+      
+      saveToCloud({
+        alerts,
+        notifications: newNotifications,
+        selectedTheme,
+        isPremium
+      });
+      
       alert("✅ Pedido confirmado! Um motoboy está a caminho da sua localização.");
       setFuelType('');
       setFuelQuantity('5');
@@ -407,7 +464,7 @@ export default function AlertaBHApp() {
       >
         <Bell className="w-6 h-6" />
         <span className="text-[10px]">Alertas</span>
-        {recentNotifications.filter(n => !n.read).length > 0 && (
+        {notifications.filter(n => !n.read).length > 0 && (
           <div className="absolute top-0 right-2 w-2 h-2 bg-red-500 rounded-full"></div>
         )}
       </button>
@@ -503,6 +560,8 @@ export default function AlertaBHApp() {
                       <span className="text-gray-700 text-sm">{alert.location}</span>
                       <br/>
                       <span className="text-xs text-gray-500">{alert.time} atrás</span>
+                      <br/>
+                      <span className="text-xs text-gray-600">Por: {alert.createdBy}</span>
                       
                       {userData.type === 'admin' && (
                         <button 
@@ -529,7 +588,7 @@ export default function AlertaBHApp() {
             {/* Botão Report */}
             <button 
               onClick={() => { 
-                setReportStep(1); 
+                resetReportFlow(); // RESET COMPLETO antes de abrir
                 setCurrentView('report'); 
               }} 
               className="absolute bottom-24 right-4 z-[999] w-16 h-16 bg-red-500 rounded-full shadow-2xl flex items-center justify-center hover:bg-red-600 border-4 border-white animate-bounce transition-all"
@@ -554,10 +613,13 @@ export default function AlertaBHApp() {
       {currentView === 'report' && (
         <>
           <div className="bg-gray-800 text-white p-4 flex items-center justify-between">
-            <button onClick={() => setCurrentView('map')}>
+            <button onClick={() => {
+              resetReportFlow(); // RESET ao fechar
+              setCurrentView('map');
+            }}>
               <X className="w-6 h-6" />
             </button>
-            <h2 className="font-bold">Reportar</h2>
+            <h2 className="font-bold">Reportar Alerta</h2>
             <div className="w-6"></div>
           </div>
           
@@ -568,12 +630,19 @@ export default function AlertaBHApp() {
               <h3 className="text-xl font-bold mb-4">
                 {gpsLocked ? 'Localização Confirmada ✓' : 'Aguardando GPS...'}
               </h3>
-              {!gpsLocked && (
+              {!gpsLocked ? (
                 <button 
                   onClick={handleGPSLock} 
                   className="bg-blue-600 px-6 py-3 rounded-full font-bold hover:bg-blue-500 transition-all"
                 >
                   Ativar GPS
+                </button>
+              ) : (
+                <button 
+                  onClick={() => setReportStep(2)} 
+                  className="bg-green-600 px-6 py-3 rounded-full font-bold hover:bg-green-500 transition-all"
+                >
+                  Continuar →
                 </button>
               )}
             </div>
@@ -588,32 +657,35 @@ export default function AlertaBHApp() {
                 className="absolute bottom-10 w-16 h-16 border-4 border-white rounded-full bg-white/20 hover:bg-white/30 transition-all"
               >
               </button>
-              <p className="absolute bottom-32 text-white text-sm">Capture a ocorrência</p>
+              <p className="absolute bottom-32 text-white text-sm">Capture a ocorrência (opcional)</p>
             </div>
           )}
 
           {/* Step 3: Tipo de Alerta */}
           {reportStep === 3 && (
-            <div className="flex-1 p-6 grid grid-cols-2 gap-4 content-start">
-              {alertTypes.map(t => (
-                <button 
-                  key={t.id} 
-                  onClick={() => {
-                    setAlertType(t.label); 
-                    setReportStep(4);
-                  }} 
-                  className="bg-gray-800 p-4 rounded-xl border border-gray-600 hover:border-blue-500 hover:bg-gray-700 flex flex-col items-center transition-all"
-                >
-                  <div className="text-4xl mb-2">{t.icon}</div>
-                  <span className="text-white font-bold text-sm">{t.label}</span>
-                </button>
-              ))}
+            <div className="flex-1 p-6 overflow-y-auto">
+              <h3 className="text-white text-xl font-bold mb-4">Tipo de Alerta</h3>
+              <div className="grid grid-cols-2 gap-4">
+                {alertTypes.map(t => (
+                  <button 
+                    key={t.id} 
+                    onClick={() => {
+                      setAlertType(t.label); 
+                      setReportStep(4);
+                    }} 
+                    className="bg-gray-800 p-4 rounded-xl border border-gray-600 hover:border-blue-500 hover:bg-gray-700 flex flex-col items-center transition-all"
+                  >
+                    <div className="text-4xl mb-2">{t.icon}</div>
+                    <span className="text-white font-bold text-sm text-center">{t.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
           {/* Step 4: Duração */}
           {reportStep === 4 && (
-            <div className="flex-1 p-6 text-white">
+            <div className="flex-1 p-6 text-white overflow-y-auto">
               <h3 className="text-xl font-bold mb-4">Duração do Alerta</h3>
               <div className="bg-gray-800 p-4 rounded mb-4 flex items-center gap-4">
                 <Clock className="text-blue-400"/> 
@@ -632,7 +704,8 @@ export default function AlertaBHApp() {
                 <p className="text-sm text-gray-400 mb-2">Resumo:</p>
                 <p className="text-white"><strong>Tipo:</strong> {alertType}</p>
                 <p className="text-white"><strong>Duração:</strong> {expirationTime} minutos</p>
-                <p className="text-white"><strong>Local:</strong> {gpsLocked ? 'GPS Ativo' : 'GPS Inativo'}</p>
+                <p className="text-white"><strong>Local:</strong> {gpsLocked ? 'GPS Ativo' : 'Localização Manual'}</p>
+                <p className="text-white"><strong>Criado por:</strong> {userData?.name}</p>
               </div>
               <button 
                 onClick={handleSubmitReport} 
@@ -655,7 +728,7 @@ export default function AlertaBHApp() {
       )}
 
       {/* ========================================== */}
-      {/* VIEW: PERFIL */}
+      {/* VIEW: PERFIL (REAL) */}
       {/* ========================================== */}
       {currentView === 'profile' && (
         <>
@@ -684,16 +757,16 @@ export default function AlertaBHApp() {
               </div>
               <div className="mt-4">
                 <div className="flex justify-between text-xs mb-1">
-                  <span>2450 / 3000 pts</span>
+                  <span>{userStats.points} pts</span>
                   <span>Rank #{userStats.ranking}</span>
                 </div>
                 <div className="w-full bg-white bg-opacity-20 rounded-full h-2">
-                  <div className="bg-white rounded-full h-2" style={{width: '82%'}}></div>
+                  <div className="bg-white rounded-full h-2" style={{width: `${Math.min(100, (userStats.points / 500) * 100)}%`}}></div>
                 </div>
               </div>
             </div>
 
-            {/* Estatísticas */}
+            {/* Estatísticas REAIS */}
             <div className="grid grid-cols-3 gap-3 mb-6">
               <div className="bg-gray-800 rounded-xl p-4 text-center">
                 <MapPin className="w-6 h-6 text-blue-400 mx-auto mb-2" />
@@ -703,7 +776,7 @@ export default function AlertaBHApp() {
               <div className="bg-gray-800 rounded-xl p-4 text-center">
                 <CheckCircle className="w-6 h-6 text-green-400 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-white">{userStats.verified}</p>
-                <p className="text-xs text-gray-400">Verificações</p>
+                <p className="text-xs text-gray-400">Criados</p>
               </div>
               <div className="bg-gray-800 rounded-xl p-4 text-center">
                 <Award className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
@@ -712,11 +785,11 @@ export default function AlertaBHApp() {
               </div>
             </div>
 
-            {/* Badges */}
+            {/* Badges REAIS */}
             <div className="mb-6">
               <h3 className="text-white font-bold text-lg mb-3 flex items-center gap-2">
                 <Star className="w-5 h-5 text-yellow-400" />
-                Conquistas Recentes
+                Conquistas
               </h3>
               <div className="grid grid-cols-4 gap-3">
                 {badges.map(badge => (
@@ -745,37 +818,57 @@ export default function AlertaBHApp() {
       )}
 
       {/* ========================================== */}
-      {/* VIEW: NOTIFICAÇÕES */}
+      {/* VIEW: NOTIFICAÇÕES (REAL) */}
       {/* ========================================== */}
       {currentView === 'notifications' && (
         <>
-          <div className="bg-gray-800 p-4 border-b border-gray-700">
+          <div className="bg-gray-800 p-4 border-b border-gray-700 flex justify-between items-center">
             <h2 className="text-white font-bold text-lg">Notificações</h2>
+            {notifications.length > 0 && (
+              <span className="text-xs text-gray-400">{notifications.length} itens</span>
+            )}
           </div>
           
-          <div className="flex-1 overflow-y-auto divide-y divide-gray-800">
-            {recentNotifications.map(notif => (
-              <div 
-                key={notif.id} 
-                className={`p-4 flex gap-4 ${!notif.read ? 'bg-gray-850' : ''}`}
-              >
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  notif.type === 'nearby' ? 'bg-red-500' : 
-                  notif.type === 'verified' ? 'bg-green-500' : 
-                  'bg-yellow-500'
-                }`}>
-                  {notif.type === 'nearby' && <MapPin className="w-6 h-6 text-white" />}
-                  {notif.type === 'verified' && <CheckCircle className="w-6 h-6 text-white" />}
-                  {notif.type === 'badge' && <Star className="w-6 h-6 text-white" />}
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-white font-semibold text-sm">{notif.title}</h4>
-                  <p className="text-gray-400 text-sm">{notif.desc}</p>
-                  <p className="text-xs text-gray-500 mt-1">{notif.time}</p>
-                </div>
-                {!notif.read && <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>}
+          <div className="flex-1 overflow-y-auto">
+            {notifications.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-gray-400 p-6">
+                <Bell className="w-16 h-16 mb-4 opacity-50" />
+                <p className="text-center">Nenhuma notificação ainda</p>
+                <p className="text-sm text-center mt-2">Crie alertas para ver notificações aqui</p>
               </div>
-            ))}
+            ) : (
+              <div className="divide-y divide-gray-800">
+                {notifications.map(notif => (
+                  <div 
+                    key={notif.id} 
+                    className={`p-4 flex gap-4 ${!notif.read ? 'bg-gray-850' : ''}`}
+                  >
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      notif.type === 'created' ? 'bg-green-500' : 
+                      notif.type === 'removed' ? 'bg-red-500' : 
+                      notif.type === 'fuel' ? 'bg-orange-500' :
+                      'bg-blue-500'
+                    }`}>
+                      {notif.type === 'created' && <CheckCircle className="w-6 h-6 text-white" />}
+                      {notif.type === 'removed' && <Trash2 className="w-6 h-6 text-white" />}
+                      {notif.type === 'fuel' && <Fuel className="w-6 h-6 text-white" />}
+                      {notif.type === 'verified' && <Star className="w-6 h-6 text-white" />}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-white font-semibold text-sm">{notif.title}</h4>
+                      <p className="text-gray-400 text-sm">{notif.desc}</p>
+                      <p className="text-xs text-gray-500 mt-1">{notif.time}</p>
+                    </div>
+                    <button 
+                      onClick={() => handleDeleteNotification(notif.id)}
+                      className="text-gray-500 hover:text-red-500 transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           
           {renderBottomNav()}
